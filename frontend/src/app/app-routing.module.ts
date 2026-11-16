@@ -4,12 +4,14 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { CasesComponent } from './cases/cases.component';
 import { CaseDetailComponent } from './cases/case-detail.component';
 import { RulesComponent } from './rules/rules.component';
+import { DevComponent } from './dev/dev.component';
 
 const routes: Routes = [
   { path: '', component: DashboardComponent },
   { path: 'cases', component: CasesComponent },
   { path: 'cases/:id', component: CaseDetailComponent },
   { path: 'rules', component: RulesComponent },
+  { path: 'dev', component: DevComponent },
   { path: '**', redirectTo: '' }
 ];
 

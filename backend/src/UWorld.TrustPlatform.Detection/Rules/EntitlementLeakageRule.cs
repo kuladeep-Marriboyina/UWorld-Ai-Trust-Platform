@@ -40,24 +40,24 @@ public sealed class EntitlementLeakageRule : IDetectionRule
                 CaseKey = $"{RuleId}:access:{access.AccessId}",
                 RuleId = RuleId,
                 RuleVersion = Version,
-                Title = $"Access to package {package} after entitlement {(offending.RefundedUtc is not null ? "refund" : "expiry")}",
+                Title = $"Package {package} used after the subscription was {(offending.RefundedUtc is not null ? "refunded" : "expired")}",
                 Severity = RiskSeverity.High,
                 Confidence = 0.9m,
                 Score = 82m,
                 BusinessImpactUsd = PackageListPrice(s, package),
                 ScoreBreakdown =
                 {
-                    new ScoreFactor("EntitlementState", 50m, $"Entitlement {offending.EntitlementId} was {reason}."),
-                    new ScoreFactor("EventTimeCheck", 32m, "Access timestamp fell outside the valid entitlement window."),
+                    new ScoreFactor("SubscriptionStatus", 50m, $"Subscription {offending.EntitlementId} was {reason}."),
+                    new ScoreFactor("AccessTime", 32m, "The user opened the content after the subscription had already ended."),
                 },
                 AccountId = access.AccountId,
                 EntityRef = $"package:{package}",
-                Expected = $"Access to package {package} requires an entitlement valid at {access.OccurredUtc:u}.",
-                Actual = $"Entitlement {offending.EntitlementId} was {reason}; access occurred at {access.OccurredUtc:u}.",
+                Expected = $"The user must have an active subscription to package {package} when they open it ({access.OccurredUtc:u}).",
+                Actual = $"The subscription was {reason}, but the user still opened package {package} on {access.OccurredUtc:u}.",
                 Evidence =
                 {
                     Ev("AccessEvent", access.AccessId.ToString(), $"Access to package {package}", $"resource={access.Resource}", access.OccurredUtc),
-                    Ev("Entitlement", offending.EntitlementId.ToString(), $"Entitlement {offending.Status}", $"window {offending.StartUtc:u}..{offending.EndUtc:u}; refunded={offending.RefundedUtc:u}", offending.EndUtc),
+                    Ev("Subscription", offending.EntitlementId.ToString(), $"Subscription {offending.Status}", $"valid {offending.StartUtc:u} to {offending.EndUtc:u}{(offending.RefundedUtc is null ? "" : $"; refunded {offending.RefundedUtc:u}")}", offending.EndUtc),
                 }
             };
         }

@@ -26,7 +26,11 @@ public sealed class DemoController : ControllerBase
     public async Task<SimulationResult> Simulate(CancellationToken ct)
         => await _simulator.SimulateAuthorizationGapAsync(RequestId(), ct);
 
-    /// <summary>Fire a specific fraud scenario live: paid-without-braintree | region-hop | code-over-limit | blocked-ip | authorization-gap.</summary>
+    /// <summary>Attack families and their bypass variants, for the Simulate menu.</summary>
+    [HttpGet("scenarios")]
+    public IReadOnlyList<ScenarioGroup> Scenarios() => DemoSimulator.Catalog;
+
+    /// <summary>Fire a specific bypass variant live (see GET scenarios); legacy family keys still work.</summary>
     [HttpPost("simulate/{scenario}")]
     [RequireRole("Analyst", "Lead")]
     public async Task<ActionResult<SimulationResult>> SimulateScenario(string scenario, CancellationToken ct)
