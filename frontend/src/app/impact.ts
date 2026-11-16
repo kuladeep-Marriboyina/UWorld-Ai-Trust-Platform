@@ -10,7 +10,7 @@ export function impactExplain(ruleId: string): ImpactInfo {
     case 'revenue-abuse':
       return { formula: 'ListPrice − PaidAmount  ·  or Σ(discount × list)', note: 'Zero-pay = full list price not captured; below-policy = the shortfall under the policy minimum; discount reuse = total discount value across the linked orders.' };
     case 'entitlement-leakage':
-      return { formula: 'package list price', note: 'Content for a package was accessed without a valid entitlement — the list price of that package is the revenue leaked.' };
+      return { formula: 'package list price', note: 'The user opened a package after their subscription had expired or been refunded — the price of that package is the revenue lost.' };
     case 'content-scraping':
       return { formula: 'questions harvested × IP value ($5)', note: 'Each stolen question is proprietary IP; impact = count of harvested questions times the configured per-question value.' };
     case 'authorization-gap':

@@ -80,7 +80,7 @@ public sealed class MockCopilot : ICopilot
     private static IReadOnlyList<string> BuildChecks(string ruleId) => ruleId switch
     {
         "authorization-gap" => new[] { "Confirm the response body size against the CDN/egress log for this correlation id.", "Verify the authorization middleware short-circuited before content assembly.", "Check whether other requests on this session share the pattern." },
-        "entitlement-leakage" => new[] { "Re-evaluate entitlement at the exact access timestamp.", "Confirm the refund/expiry propagated to the access-check cache.", "Scan for other access events in the same lapsed window." },
+        "entitlement-leakage" => new[] { "Check whether the subscription was active at the exact time the content was opened.", "Confirm the refund/expiry reached the access check (it may still be cached).", "Look for other content the user opened after the subscription ended." },
         "revenue-abuse" => new[] { "Trace the order-to-payment reconciliation for this order.", "Check the discount code's intended single-use constraint.", "Look for related accounts sharing payment instruments." },
         "content-scraping" => new[] { "Inspect user-agent and request cadence for automation markers.", "Compare against the account's historical study pattern.", "Confirm whether rate limiting was active for this session." },
         "coordinated-account" => new[] { "Compare device fingerprints and payment instruments across the group.", "Confirm the shared IP is not a known corporate/campus egress.", "Review signup timing and email patterns." },

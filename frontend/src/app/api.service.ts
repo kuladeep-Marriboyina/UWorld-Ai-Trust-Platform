@@ -29,6 +29,14 @@ export class ApiService {
   alerts() { return this.http.get<any>(`${base}/api/alerts`); }
   usageSummary() { return this.http.get<any>(`${base}/api/usage/summary`); }
 
+  devRequests(status = 'all', search = '', take = 150): Observable<any[]> {
+    return this.http.get<any[]>(`${base}/api/dev/requests?take=${take}&status=${status}&search=${encodeURIComponent(search)}`);
+  }
+  devRequest(id: number) { return this.http.get<any>(`${base}/api/dev/requests/${id}`); }
+  investigate(id: number) { return this.http.post<any>(`${base}/api/dev/requests/${id}/investigate`, {}); }
+  clearDevRequests() { return this.http.delete(`${base}/api/dev/requests`); }
+
+  scenarios(): Observable<any[]> { return this.http.get<any[]>(`${base}/api/demo/scenarios`); }
   simulate(scenario: string) { return this.http.post<any>(`${base}/api/demo/simulate/${scenario}`, {}, lead); }
   run() { return this.http.post<any>(`${base}/api/demo/run`, {}, lead); }
 }

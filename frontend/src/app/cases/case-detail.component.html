@@ -1,80 +1,132 @@
 <a class="back" routerLink="/cases">← Back to cases</a>
 
-<div *ngIf="case" style="margin-top:10px">
-  <div class="row">
-    <span class="sev {{ case.severity | lowercase }}">{{ case.severity }}</span>
-    <h1 style="margin:0">{{ case.title }}</h1>
-  </div>
-  <div class="muted" style="font-size:13px;margin:4px 0 14px">
-    Case #{{ case.caseId }} · <span class="chip">{{ case.ruleId }}</span> · score {{ case.score }} ·
-    confidence {{ case.confidence }} ·
-    <span class="popover">${{ case.businessImpactUsd | number:'1.0-2' }} at risk<span class="infoic" (click)="showImpact = !showImpact" title="How is this at risk?">i</span>
-      <span class="popbox" *ngIf="showImpact"><span class="arrow"></span>
-        <b>How this ${{ case.businessImpactUsd | number:'1.0-2' }} is at risk</b>
-        <span class="f">{{ impact.formula }}</span>
-        {{ impact.note }}
-        <div style="margin-top:8px;color:#9fb6d8">Observed: {{ case.actual }}</div>
-      </span>
-    </span> ·
-    <span class="pill {{ case.status | lowercase }}">{{ case.status }}</span>
-  </div>
+<div *ngIf="case" class="cd">
+  <!-- header -->
+  <div class="card cd-head sevbar-{{ case.severity | lowercase }}">
+    <div class="cd-top">
+      <span class="sev {{ case.severity | lowercase }}">{{ case.severity }}</span>
+      <span class="chip">{{ case.ruleId }} · {{ case.ruleVersion }}</span>
+      <span class="pill {{ case.status | lowercase }}">{{ case.status }}</span>
+      <span class="muted cd-id">Case #{{ case.caseId }}</span>
+    </div>
+    <h1 class="cd-title">{{ case.title }}</h1>
 
-  <div class="row" style="gap:18px;font-size:12.5px;margin:0 0 14px;color:var(--ink-2)">
-    <span><b>User</b> <span class="mono">{{ case.accountId || '—' }}</span></span>
-    <span><b>Entity</b> <span class="mono">{{ case.entityRef || '—' }}</span></span>
-    <span><b>Raised</b> <span class="mono">{{ case.createdUtc | date:'MMM d, y · HH:mm:ss' }}</span></span>
-    <span *ngIf="case.resolvedUtc"><b>Resolved</b> <span class="mono">{{ case.resolvedUtc | date:'MMM d, y · HH:mm:ss' }}</span></span>
-  </div>
-
-  <div class="grid2">
-    <div class="card">
-      <h2>Expected vs actual</h2>
-      <div class="diff">
-        <div class="exp"><b>Expected</b>{{ case.expected }}</div>
-        <div class="act"><b>Actual</b>{{ case.actual }}</div>
+    <div class="cd-stats">
+      <div class="st">
+        <div class="st-l">Risk score</div>
+        <div class="st-v">{{ case.score | number:'1.0-0' }}<small>/100</small></div>
+        <div class="bar"><i [style.width.%]="case.score"></i></div>
       </div>
-
-      <h2>Why flagged — score breakdown</h2>
-      <div *ngFor="let f of case.scoreBreakdown" class="ev">
-        <b>{{ f.signal }}</b> (+{{ f.weight }}) — {{ f.rationale }}
+      <div class="st">
+        <div class="st-l">Confidence</div>
+        <div class="st-v">{{ case.confidence * 100 | number:'1.0-0' }}<small>%</small></div>
+        <div class="bar"><i [style.width.%]="case.confidence * 100"></i></div>
       </div>
-
-      <h2>Evidence</h2>
-      <div *ngFor="let e of case.evidence" class="ev">
-        <span class="chip">{{ e.sourceType }} #{{ e.sourceId }}</span> {{ e.label }}
-        <span class="muted mono" style="font-size:11.5px" *ngIf="e.occurredUtc"> · {{ e.occurredUtc | date:'MMM d, HH:mm:ss' }}</span>
-        <div class="muted" style="font-size:12px" *ngIf="e.detail">{{ e.detail }}</div>
+      <div class="st">
+        <div class="st-l">At risk
+          <span class="popover"><span class="infoic" (click)="showImpact = !showImpact" title="How is this at risk?">i</span>
+            <span class="popbox" *ngIf="showImpact"><span class="arrow"></span>
+              <b>How this ${{ case.businessImpactUsd | number:'1.2-2' }} is at risk</b>
+              <span class="f">{{ impact.formula }}</span>
+              {{ impact.note }}
+            </span>
+          </span>
+        </div>
+        <div class="st-v money">${{ case.businessImpactUsd | number:'1.2-2' }}</div>
       </div>
-
-      <h2>Activity</h2>
-      <table>
-        <tbody>
-          <tr *ngFor="let a of case.activity"><td style="width:120px">{{ a.action }}</td><td>{{ a.actor }}</td><td>{{ a.notes }}</td></tr>
-        </tbody>
-      </table>
+      <div class="st">
+        <div class="st-l">Assigned to</div>
+        <div class="st-v small">{{ case.assignedTo || 'Unassigned' }}</div>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>Actions</h2>
-      <div class="row" style="margin-bottom:14px">
-        <button class="btn ghost" (click)="assign()">Assign</button>
-        <button class="btn warn" (click)="escalate()">Escalate</button>
-        <button class="btn ok" (click)="resolve()">Resolve</button>
+    <div class="cd-facts">
+      <div><b>User</b><span class="mono">{{ case.accountId || '—' }}</span></div>
+      <div><b>Entity</b><span class="mono">{{ case.entityRef || '—' }}</span></div>
+      <div><b>Raised</b><span class="mono">{{ case.createdUtc | date:'MMM d, y · HH:mm:ss' }}</span></div>
+      <div><b>Resolved</b><span class="mono">{{ case.resolvedUtc ? (case.resolvedUtc | date:'MMM d, y · HH:mm:ss') : '—' }}</span></div>
+    </div>
+  </div>
+
+  <div class="cd-grid">
+    <!-- left: the investigation -->
+    <div class="cd-main">
+      <div class="card">
+        <h2>Expected vs actual</h2>
+        <div class="cmp">
+          <div class="cmp-exp"><div class="cmp-l">✓ Expected (policy)</div>{{ case.expected }}</div>
+          <div class="cmp-act">
+            <div class="cmp-l">✗ Actual (observed)</div>
+            <div class="cmp-main">{{ actualParts[0] }}</div>
+            <ul *ngIf="actualParts.length > 1"><li *ngFor="let p of actualParts.slice(1)">{{ p }}</li></ul>
+          </div>
+        </div>
       </div>
 
-      <h2>AI investigation copilot</h2>
-      <button class="btn" (click)="summarise()" [disabled]="aiBusy">{{ aiBusy ? 'Thinking…' : 'Explain this case' }}</button>
+      <div class="card">
+        <h2>Why it was flagged</h2>
+        <div class="factor" *ngFor="let f of case.scoreBreakdown">
+          <div class="fx-h"><b>{{ f.signal }}</b><span class="fx-w">+{{ f.weight }}</span></div>
+          <div class="bar"><i [style.width.%]="f.weight / maxWeight * 100"></i></div>
+          <div class="fx-r">{{ f.rationale }}</div>
+        </div>
+      </div>
 
-      <div *ngIf="ai" style="margin-top:12px">
-        <p style="font-size:14px"><b>{{ ai.headline }}</b></p>
-        <p style="font-size:13.5px">{{ ai.narrative }}</p>
-        <h2>Why</h2>
-        <div *ngFor="let w of ai.whyFlagged" class="ev">{{ w }}</div>
-        <h2>Uncertainty</h2>
-        <div *ngFor="let u of ai.uncertaintyLabels" class="q">{{ u }}</div>
-        <h2>Recommended checks</h2>
-        <ol><li *ngFor="let r of ai.recommendedChecks" style="font-size:13.5px">{{ r }}</li></ol>
-        <p class="muted" style="font-size:12px">{{ ai.disclaimer }}</p>
+      <div class="card">
+        <h2>Evidence timeline <span class="muted cnt">{{ case.evidence.length }} items</span></h2>
+        <div class="tl">
+          <div class="tl-i" *ngFor="let e of timeline">
+            <div class="tl-dot"></div>
+            <div class="tl-c">
+              <div class="tl-h">
+                <span class="chip">{{ e.sourceType }} #{{ e.sourceId }}</span>
+                <span class="tl-t mono">{{ e.occurredUtc ? (e.occurredUtc | date:'MMM d, HH:mm:ss') : 'no timestamp' }}</span>
+              </div>
+              <div class="tl-l">{{ e.label }}</div>
+              <div class="tl-d mono" *ngIf="e.detail">{{ e.detail }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Audit trail</h2>
+        <div class="muted" *ngIf="!case.activity.length" style="font-size:13px">No activity yet.</div>
+        <div class="act" *ngFor="let a of case.activity">
+          <span class="act-a">{{ a.action }}</span>
+          <span class="act-n">{{ a.notes }} <span class="muted">— {{ a.actor }}</span></span>
+          <span class="act-t mono">{{ a.occurredUtc | date:'MMM d, HH:mm:ss' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- right: actions + AI -->
+    <div class="cd-side">
+      <div class="card">
+        <h2>Actions</h2>
+        <div class="acts">
+          <button class="btn ghost" (click)="assign()">Assign to me</button>
+          <button class="btn warn" (click)="escalate()">Escalate</button>
+          <button class="btn ok" (click)="resolve()">Resolve</button>
+        </div>
+        <div class="muted" style="font-size:12px;margin-top:8px">Every action is written to the audit trail. Enforcement stays with humans.</div>
+      </div>
+
+      <div class="card">
+        <h2>AI investigation copilot</h2>
+        <button class="btn" style="width:100%" (click)="summarise()" [disabled]="aiBusy">{{ aiBusy ? 'Thinking…' : (ai ? 'Regenerate explanation' : '✨ Explain this case') }}</button>
+
+        <div *ngIf="ai" class="ai">
+          <p class="ai-h">{{ ai.headline }}</p>
+          <p class="ai-n">{{ ai.narrative }}</p>
+          <div class="ai-l">Why</div>
+          <ul><li *ngFor="let w of ai.whyFlagged">{{ w }}</li></ul>
+          <div class="ai-l">Uncertainty</div>
+          <div *ngFor="let u of ai.uncertaintyLabels" class="q">{{ u }}</div>
+          <div class="ai-l">Recommended checks</div>
+          <ol><li *ngFor="let r of ai.recommendedChecks">{{ r }}</li></ol>
+          <p class="muted" style="font-size:12px">{{ ai.disclaimer }}</p>
+        </div>
       </div>
     </div>
   </div>

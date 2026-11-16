@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using UWorld.TrustPlatform.Ai;
 using UWorld.TrustPlatform.Api.Security;
+using UWorld.TrustPlatform.Api.DevTools;
 using UWorld.TrustPlatform.Api.Services;
 using UWorld.TrustPlatform.Data;
 using UWorld.TrustPlatform.Detection;
@@ -18,6 +19,7 @@ builder.Services.AddScoped<ISignalRepository, SignalRepository>();
 builder.Services.AddScoped<IRiskCaseRepository, RiskCaseRepository>();
 builder.Services.AddScoped<IUsageLedger, UsageLedgerRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+builder.Services.AddScoped<IDevRequestLog, DevRequestLogRepository>();
 
 // --- Detection engine + all rules (deterministic, versioned) ------------
 builder.Services.AddSingleton<IDetectionRule, AuthorizationGapRule>();
@@ -54,6 +56,9 @@ builder.Services.AddSingleton<IngestionWorker>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<IngestionWorker>());
 builder.Services.AddScoped<DemoSimulator>();
 
+// --- Dev info (Development only): request/response capture + code investigator ---
+builder.Services.AddSingleton<CodeInvestigator>();
+
 builder.Services.AddControllers().AddJsonOptions(o =>
     o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
@@ -72,6 +77,8 @@ app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors();
 app.UseMiddleware<RequestTracingMiddleware>();
+if (app.Environment.IsDevelopment())
+    app.UseMiddleware<DevCaptureMiddleware>();
 app.UseMiddleware<RoleContextMiddleware>();
 app.MapControllers();
 

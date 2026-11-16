@@ -17,7 +17,7 @@ DECLARE @now DATETIME2 = SYSUTCDATETIME();
 /* ---- Rule catalogue ------------------------------------------------ */
 INSERT dbo.RuleDefinitions (RuleId, Name, Version, Category, Description) VALUES
  ('authorization-gap',   'Authorization Gap',          'v1', 'Access',       'Protected content returned despite a Denied/Missing authorization outcome.'),
- ('entitlement-leakage', 'Entitlement Leakage',        'v1', 'Entitlement',  'Access granted after expiry/cancellation/refund, evaluated at event-time.'),
+ ('entitlement-leakage', 'Used After Subscription Ended', 'v1', 'Subscription', 'Content opened after the subscription expired, was cancelled or refunded.'),
  ('revenue-abuse',       'Revenue & Discount Abuse',   'v1', 'Revenue',      'Unexpected zero-pay orders, price-below-policy, or reused discounts across linked accounts.'),
  ('content-scraping',    'Content Scraping',           'v1', 'IP',           'High-volume sequential harvesting of the question bank.'),
  ('coordinated-account', 'Coordinated Account Abuse',  'v1', 'Account',      'Multi-account sharing scored on weighted signals (never shared-IP alone).'),
