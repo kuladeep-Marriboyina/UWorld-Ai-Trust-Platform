@@ -1,0 +1,11 @@
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Domain\bin\Debug\net8.0\UWorld.TrustPlatform.Domain.deps.json
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Domain\bin\Debug\net8.0\UWorld.TrustPlatform.Domain.dll
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Domain\bin\Debug\net8.0\UWorld.TrustPlatform.Domain.pdb
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Domain\obj\Debug\net8.0\UWorld.TrustPlatform.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Domain\obj\Debug\net8.0\UWorld.TrustPlatform.Domain.AssemblyInfoInputs.cache
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Domain\obj\Debug\net8.0\UWorld.TrustPlatform.Domain.AssemblyInfo.cs
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Domain\obj\Debug\net8.0\UWorld.TrustPlatform.Domain.csproj.CoreCompileInputs.cache
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Domain\obj\Debug\net8.0\UWorld.TrustPlatform.Domain.dll
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Domain\obj\Debug\net8.0\refint\UWorld.TrustPlatform.Domain.dll
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Domain\obj\Debug\net8.0\UWorld.TrustPlatform.Domain.pdb
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Domain\obj\Debug\net8.0\ref\UWorld.TrustPlatform.Domain.dll

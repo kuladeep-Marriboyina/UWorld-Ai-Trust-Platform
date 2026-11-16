@@ -1,0 +1,41 @@
+<h1>Risk cases</h1>
+<div class="row" style="margin:10px 0 14px">
+  <select [(ngModel)]="filterRule" (change)="load()" style="width:auto">
+    <option value="">All rules</option>
+    <option *ngFor="let r of rules" [value]="r">{{ r }}</option>
+  </select>
+  <select [(ngModel)]="filterSeverity" (change)="load()" style="width:auto">
+    <option value="">All severities</option>
+    <option value="Critical">Critical</option>
+    <option value="High">High</option>
+    <option value="Medium">Medium</option>
+    <option value="Low">Low</option>
+  </select>
+  <span class="muted">{{ cases.length }} cases</span>
+</div>
+
+<div class="card">
+  <table>
+    <thead><tr><th>#</th><th>Severity</th><th class="num">Score</th><th>Rule</th><th>Title</th><th class="num">$ at risk</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr class="clickable" *ngFor="let c of cases" [routerLink]="['/cases', c.caseId]">
+        <td class="mono">{{ c.caseId }}</td>
+        <td><span class="sev {{ c.severity | lowercase }}">{{ c.severity }}</span></td>
+        <td class="num">{{ c.score }}</td>
+        <td><span class="chip">{{ c.ruleId }}</span></td>
+        <td>{{ c.title }}</td>
+        <td class="num">
+          <span class="popover">${{ c.businessImpactUsd | number:'1.0-0' }}<span class="infoic" (click)="toggleImpact(c.caseId, $event)" title="How is this at risk?">i</span>
+            <span class="popbox" *ngIf="openImpact === c.caseId" (click)="$event.stopPropagation()"><span class="arrow"></span>
+              <b>How this ${{ c.businessImpactUsd | number:'1.0-2' }} is at risk</b>
+              <span class="f">{{ impact(c.ruleId).formula }}</span>
+              {{ impact(c.ruleId).note }}
+              <div style="margin-top:8px;color:#9fb6d8">Observed: {{ c.actual }}</div>
+            </span>
+          </span>
+        </td>
+        <td><span class="pill {{ c.status | lowercase }}">{{ c.status }}</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

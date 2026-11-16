@@ -1,0 +1,66 @@
+<h1>Rules Portal</h1>
+<div class="muted" style="font-size:13px;margin-bottom:14px">Write a rule in plain English. The AI maps it to real schema fields, asks if anything is unclear, then activates it — fraud detection understands it with no redeploy.</div>
+
+<div class="card">
+  <h2>Author a new rule in plain English</h2>
+  <textarea [(ngModel)]="text" placeholder="e.g. Flag any order that shows as paid but has no Braintree transaction, over $50, excluding free trials"></textarea>
+  <div class="row" style="margin:8px 0">
+    <button class="btn" (click)="interpret()" [disabled]="busy || !text">{{ busy ? 'Interpreting…' : 'Interpret' }}</button>
+    <span class="muted" style="font-size:12px">Try:</span>
+    <span class="chip" style="cursor:pointer" *ngFor="let e of examples" (click)="use(e)">{{ e.length > 42 ? (e.slice(0,42)+'…') : e }}</span>
+  </div>
+
+  <div *ngIf="activated" class="map">✓ Rule <b>{{ activated }}</b> activated and now running.</div>
+
+  <div *ngIf="result" style="margin-top:10px">
+    <p style="font-size:13.5px"><b>Interpretation</b> — {{ result.explanation }}
+      <span class="chip">confidence {{ result.confidence }}</span></p>
+
+    <h2>Field mappings</h2>
+    <div *ngFor="let m of result.fieldMappings" class="map">
+      “{{ m.phrase }}” → <b>{{ m.table }}.{{ m.field }}</b> — {{ m.interpretation }}
+    </div>
+    <div *ngIf="!result.fieldMappings?.length" class="muted">No fields mapped yet.</div>
+
+    <div *ngIf="result.clarifyingQuestions?.length">
+      <h2>Clarifying questions</h2>
+      <div *ngFor="let q of result.clarifyingQuestions" class="q">
+        <div style="margin-bottom:6px">{{ q }}</div>
+        <input [(ngModel)]="answers[keyOf(q)]" placeholder="answer ({{ keyOf(q) }})" style="max-width:280px" />
+      </div>
+      <button class="btn ghost" (click)="interpret()" style="margin-top:8px">Re-interpret with answers</button>
+    </div>
+
+    <div *ngIf="result.proposedRule" style="margin-top:12px">
+      <h2>Proposed rule</h2>
+      <div class="ev">
+        <b>{{ result.proposedRule.ruleId }}</b> · target {{ result.proposedRule.target }} · severity {{ result.proposedRule.severity }}
+        <div *ngFor="let c of result.proposedRule.when" class="mono" style="font-size:12.5px;margin-top:4px">
+          {{ c.field }} {{ c.op }} {{ c.value || (c.values ? c.values.join(' / ') : '') }}
+        </div>
+      </div>
+      <button class="btn ok" (click)="activate()" [disabled]="result.clarifyingQuestions?.length">Activate rule</button>
+      <span class="muted" style="font-size:12px" *ngIf="result.clarifyingQuestions?.length"> — answer the questions first</span>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2>Active rules</h2>
+  <table>
+    <thead><tr><th>Rule</th><th>Category</th><th>Severity</th><th>Type</th><th>Enabled</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let r of rules">
+        <td><b>{{ r.name || r.ruleId }}</b><div class="muted mono" style="font-size:11.5px">{{ r.ruleId }}</div></td>
+        <td>{{ r.category }}</td>
+        <td><span class="sev {{ (r.severity || 'medium') | lowercase }}">{{ r.severity || '—' }}</span></td>
+        <td><span class="chip">{{ r.isDeclarative ? 'NL-authored' : 'built-in' }}</span></td>
+        <td>
+          <button class="btn" [class.gray]="!r.enabled" [class.ok]="r.enabled" (click)="toggle(r)" style="padding:4px 12px">
+            {{ r.enabled ? 'On' : 'Off' }}
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

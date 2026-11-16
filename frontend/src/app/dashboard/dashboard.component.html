@@ -1,0 +1,81 @@
+<div class="row" style="justify-content:space-between;align-items:flex-end">
+  <h1>Fraud &amp; Revenue Dashboard</h1>
+  <div style="text-align:right">
+    <div class="mono" style="font-size:18px;font-weight:700;color:var(--brand-2)">{{ now | date:'EEE, MMM d y · HH:mm:ss' }}</div>
+    <div class="muted" style="font-size:12px">local time · {{ now | date:'zzzz' }}</div>
+  </div>
+</div>
+<div class="muted" style="font-size:12.5px;margin-bottom:14px">
+  Live · auto-refresh every 5s · last refreshed <b>{{ updated | date:'MMM d, HH:mm:ss' }}</b>
+  · window: last {{ windowMinutes }} min
+</div>
+
+<div class="tiles">
+  <div class="tile"><div class="v">{{ patterns.totalCases || 0 }}</div><div class="l">Open risk cases</div></div>
+  <div class="tile"><div class="v">${{ (patterns.totalAtRiskUsd || 0) | number:'1.0-0' }}</div>
+    <div class="l">Revenue at risk
+      <span class="popover"><span class="infoic" (click)="showRiskInfo = !showRiskInfo" title="How is this at risk?">i</span>
+        <span class="popbox" *ngIf="showRiskInfo"><span class="arrow"></span>
+          <b>How the ${{ (patterns.totalAtRiskUsd || 0) | number:'1.0-0' }} breaks down</b>
+          <span class="f">sum of each case's business impact</span>
+          <div *ngFor="let r of patterns.byRule" style="display:flex;justify-content:space-between;gap:12px;margin:2px 0">
+            <span>{{ r.ruleId }} <span style="color:#9fb6d8">×{{ r.count }}</span></span>
+            <span class="amt">${{ r.atRiskUsd | number:'1.0-0' }}</span>
+          </div>
+        </span>
+      </span>
+    </div>
+  </div>
+  <div class="tile"><div class="v">{{ subs.length }}</div><div class="l">Subscriptions active now</div></div>
+  <div class="tile"><div class="v">${{ (usage?.totalAiCostUsd || 0) | number:'1.4-4' }}</div><div class="l">AI spend (total)</div></div>
+</div>
+
+<div class="grid2" style="margin-top:16px">
+  <div class="card">
+    <h2>Top active subscriptions <span class="muted" style="font-size:12px">(last {{ windowMinutes }} min)</span></h2>
+    <table>
+      <thead><tr><th>Sub</th><th>User</th><th class="num">Accesses</th><th class="num">Regions</th><th>Last region</th><th>Last access</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let s of subs">
+          <td class="mono">{{ s.subscriptionId }}</td>
+          <td class="mono">{{ s.userId }}</td>
+          <td class="num">{{ s.accessCount }}</td>
+          <td class="num"><span [class.chip]="s.distinctCountries>1" *ngIf="s.distinctCountries>1">{{ s.distinctCountries }} ⚠</span><span *ngIf="s.distinctCountries<=1">{{ s.distinctCountries }}</span></td>
+          <td>{{ s.lastCountry }}</td>
+          <td class="mono" style="font-size:12px" [title]="s.lastAccessUtc | date:'medium'">{{ s.lastAccessUtc | date:'MMM d, HH:mm:ss' }}</td>
+        </tr>
+        <tr *ngIf="!subs.length"><td colspan="6" class="muted">No active sessions in the window.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Alerts</h2>
+    <div *ngFor="let a of alerts.alerts" class="alert">
+      <span class="sev {{ a.severity | lowercase }}">{{ a.severity }}</span>
+      <div class="t"><a [routerLink]="['/cases', a.caseId]">{{ a.title }}</a>
+        <div class="muted" style="font-size:12px">{{ a.ruleId }} · score {{ a.score }} · ${{ a.businessImpactUsd | number:'1.0-0' }}</div></div>
+    </div>
+    <div *ngIf="!alerts.alerts?.length" class="muted">No open high-severity alerts.</div>
+
+    <h2 *ngIf="alerts.compromise?.length">Code / package compromise</h2>
+    <div *ngFor="let c of alerts.compromise" class="alert">
+      <span class="chip">{{ c.entity }}</span>
+      <div class="t">{{ c.cases }} fraud cases · ${{ c.atRiskUsd | number:'1.0-0' }} at risk</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2>Fraud patterns — revenue at risk by rule</h2>
+  <table>
+    <tbody>
+      <tr *ngFor="let r of patterns.byRule">
+        <td style="width:220px">{{ r.ruleId }}</td>
+        <td><div class="bar"><i [style.width.%]="(r.atRiskUsd / maxRule()) * 100"></i></div></td>
+        <td class="num" style="width:70px">{{ r.count }}</td>
+        <td class="num" style="width:90px">${{ r.atRiskUsd | number:'1.0-0' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

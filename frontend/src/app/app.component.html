@@ -1,0 +1,34 @@
+<div class="topbar">
+  <div class="brand">UWorld <span>AI Trust &amp; Revenue Protection</span></div>
+  <nav>
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Dashboard</a>
+    <a routerLink="/cases" routerLinkActive="active">Cases</a>
+    <a routerLink="/rules" routerLinkActive="active">Rules Portal</a>
+  </nav>
+  <div class="sim">
+    <div class="dropdown">
+      <button class="btn-sim" (click)="menuOpen = !menuOpen" [disabled]="busy">⚡ Simulate attack ▾</button>
+      <div class="menu wide" *ngIf="menuOpen">
+        <div class="menuhdr">Pick a fraud scenario to inject live</div>
+        <button *ngFor="let s of scenarios" (click)="simulate(s)">
+          <div class="ml">{{ s.label }}</div>
+          <div class="md">{{ s.desc }}</div>
+          <div class="mt">injects into {{ s.tables }}</div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="simbanner" *ngIf="active">
+  <div class="sb-body">
+    <div class="sb-title">⚡ Simulating: {{ active.label }} <span class="sb-tables">→ {{ active.tables }}</span></div>
+    <div class="sb-desc">{{ active.desc }}</div>
+    <div class="sb-result" [class.ok]="!busy">{{ result }}</div>
+  </div>
+  <button class="sb-x" (click)="closeBanner()">✕</button>
+</div>
+
+<main>
+  <router-outlet></router-outlet>
+</main>

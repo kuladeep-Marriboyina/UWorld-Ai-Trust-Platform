@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "UWorld.TrustPlatform.Detection/1.0.0": {
+        "dependencies": {
+          "UWorld.TrustPlatform.Domain": "1.0.0"
+        },
+        "runtime": {
+          "UWorld.TrustPlatform.Detection.dll": {}
+        }
+      },
+      "UWorld.TrustPlatform.Domain/1.0.0": {
+        "runtime": {
+          "UWorld.TrustPlatform.Domain.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "UWorld.TrustPlatform.Detection/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "UWorld.TrustPlatform.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

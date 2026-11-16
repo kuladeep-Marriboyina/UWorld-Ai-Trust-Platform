@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.22" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UWorld.TrustPlatform.Domain\UWorld.TrustPlatform.Domain.csproj" />
+    <ProjectReference Include="..\UWorld.TrustPlatform.Data\UWorld.TrustPlatform.Data.csproj" />
+    <ProjectReference Include="..\UWorld.TrustPlatform.Detection\UWorld.TrustPlatform.Detection.csproj" />
+    <ProjectReference Include="..\UWorld.TrustPlatform.Ai\UWorld.TrustPlatform.Ai.csproj" />
+    <ProjectReference Include="..\UWorld.TrustPlatform.Ingestion\UWorld.TrustPlatform.Ingestion.csproj" />
+  </ItemGroup>
+
+</Project>

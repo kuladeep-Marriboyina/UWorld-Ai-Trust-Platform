@@ -1,0 +1,15 @@
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\bin\Debug\net8.0\UWorld.TrustPlatform.Ai.deps.json
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\bin\Debug\net8.0\UWorld.TrustPlatform.Ai.dll
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\bin\Debug\net8.0\UWorld.TrustPlatform.Ai.pdb
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\bin\Debug\net8.0\UWorld.TrustPlatform.Domain.dll
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\bin\Debug\net8.0\UWorld.TrustPlatform.Domain.pdb
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\UWorld.TrustPlatform.Ai.csproj.AssemblyReference.cache
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\UWorld.TrustPlatform.Ai.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\UWorld.TrustPlatform.Ai.AssemblyInfoInputs.cache
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\UWorld.TrustPlatform.Ai.AssemblyInfo.cs
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\UWorld.TrustPlatform.Ai.csproj.CoreCompileInputs.cache
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\UWorld.T.038003C5.Up2Date
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\UWorld.TrustPlatform.Ai.dll
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\refint\UWorld.TrustPlatform.Ai.dll
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\UWorld.TrustPlatform.Ai.pdb
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\ref\UWorld.TrustPlatform.Ai.dll
