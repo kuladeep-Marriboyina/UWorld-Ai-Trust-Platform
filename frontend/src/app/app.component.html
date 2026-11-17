@@ -4,11 +4,14 @@
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Dashboard</a>
     <a routerLink="/cases" routerLinkActive="active">Cases</a>
     <a routerLink="/rules" routerLinkActive="active">Rules Portal</a>
-    <a routerLink="/dev" routerLinkActive="active">Dev info</a>
   </nav>
   <div class="sim">
     <div class="dropdown">
-      <button class="btn-sim" (click)="menuOpen = !menuOpen">⚡ Simulate attack ▾</button>
+      <button class="btn-sim" [class.open]="menuOpen" (click)="menuOpen = !menuOpen">
+        <span class="si">⚗</span>
+        <span class="lbl">Simulate</span>
+        <span class="caret">▾</span>
+      </button>
       <div class="menu wide" *ngIf="menuOpen">
         <div class="menuhdr">Pick an attack family</div>
         <div class="menuerr" *ngIf="!groups.length">{{ error || 'Loading scenarios…' }}</div>

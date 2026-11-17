@@ -98,6 +98,49 @@
           <span class="act-t mono">{{ a.occurredUtc | date:'MMM d, HH:mm:ss' }}</span>
         </div>
       </div>
+
+      <details class="card devinfo">
+        <summary>
+          <span class="dev-sum">{{ '{' }}&#8203;{{ '}' }} Dev info</span>
+          <span class="muted" style="font-size:12px">technical detail for engineers — click to expand</span>
+        </summary>
+        <div class="dev-grid">
+          <div><b>Case key</b><span class="mono">{{ case.caseKey }}</span></div>
+          <div><b>Rule</b><span class="mono">{{ case.ruleId }} · {{ case.ruleVersion }}</span></div>
+          <div><b>Severity · Score · Confidence</b><span class="mono">{{ case.severity }} · {{ case.score }} · {{ case.confidence }}</span></div>
+          <div><b>Account · Entity</b><span class="mono">{{ case.accountId || '—' }} · {{ case.entityRef || '—' }}</span></div>
+          <div><b>Business impact</b><span class="mono">${{ case.businessImpactUsd }}</span></div>
+          <div><b>Created (UTC)</b><span class="mono">{{ case.createdUtc }}</span></div>
+          <div class="span2"><b>Produced by</b><span class="mono">{{ sourceFile }}</span></div>
+        </div>
+        <div *ngIf="devReq" class="dev-http">
+          <div class="dev-http-h">
+            <span class="httpm {{ devReq.method | lowercase }}">{{ devReq.method }}</span>
+            <span class="mono dev-path">{{ devReq.path }}{{ devReq.queryString }}</span>
+            <span class="https" [class.ok]="devReq.statusCode < 400" [class.err]="devReq.statusCode >= 400">{{ devReq.statusCode }}</span>
+            <span class="muted" style="font-size:11.5px">{{ devReq.durationMs }}ms · req {{ devReq.requestId }}</span>
+          </div>
+          <div class="dev-io">
+            <div class="dev-col">
+              <div class="ai-l" style="margin:0 0 4px">Request payload</div>
+              <pre class="dev-raw sm">{{ pretty(devReq.requestBody) }}</pre>
+            </div>
+            <div class="dev-col">
+              <div class="ai-l" style="margin:0 0 4px">Response</div>
+              <pre class="dev-raw sm">{{ pretty(devReq.responseBody) }}</pre>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="!devReq" class="muted" style="font-size:12.5px;padding:0 16px 6px">
+          No captured HTTP call for this case — it was raised by the background worker. The stored case is below.
+        </div>
+
+        <div class="dev-raw-h">
+          <span class="ai-l" style="margin:0">Raw case JSON ({{ case.evidence.length }} evidence · {{ case.scoreBreakdown.length }} factors)</span>
+          <button class="btn ghost xs" (click)="copyJson()">{{ copied ? 'Copied ✓' : 'Copy JSON' }}</button>
+        </div>
+        <pre class="dev-raw">{{ rawJson }}</pre>
+      </details>
     </div>
 
     <!-- right: actions + AI -->

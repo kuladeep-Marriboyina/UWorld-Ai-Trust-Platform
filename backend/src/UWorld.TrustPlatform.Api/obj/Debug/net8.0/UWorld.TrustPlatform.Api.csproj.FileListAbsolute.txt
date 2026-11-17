@@ -85,3 +85,4 @@ C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.T
 C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Api\obj\Debug\net8.0\UWorld.TrustPlatform.Api.pdb
 C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Api\obj\Debug\net8.0\UWorld.TrustPlatform.Api.genruntimeconfig.cache
 C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Api\obj\Debug\net8.0\ref\UWorld.TrustPlatform.Api.dll
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Api\obj\Debug\net8.0\UWorld.TrustPlatform.Api.sourcelink.json

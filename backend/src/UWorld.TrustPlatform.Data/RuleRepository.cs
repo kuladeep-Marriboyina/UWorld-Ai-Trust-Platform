@@ -20,7 +20,7 @@ public sealed class RuleRepository : IRuleRepository
     {
         await using var cn = await _factory.OpenAsync(ct).ConfigureAwait(false);
         await using var cmd = new SqlCommand(
-            "SELECT RuleId, Name, Category, Severity, Enabled, ConfigJson, IsDeclarative, DeclarativeJson, Author FROM dbo.RuleDefinitions", cn);
+            "SELECT RuleId, Name, Category, Severity, Enabled, ConfigJson, IsDeclarative, DeclarativeJson, Author, Version, Description FROM dbo.RuleDefinitions", cn);
         var list = new List<RuleConfigEntry>();
         await using var r = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await r.ReadAsync(ct).ConfigureAwait(false))
@@ -35,6 +35,8 @@ public sealed class RuleRepository : IRuleRepository
                 IsDeclarative = !r.IsDBNull(6) && r.GetBoolean(6),
                 DeclarativeJson = r.IsDBNull(7) ? null : r.GetString(7),
                 Author = r.IsDBNull(8) ? null : r.GetString(8),
+                Version = r.IsDBNull(9) ? null : r.GetString(9),
+                Description = r.IsDBNull(10) ? null : r.GetString(10),
             });
         return list;
     }

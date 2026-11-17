@@ -33,6 +33,41 @@ export class CaseDetailComponent implements OnInit {
     return this.case && this.case.scoreBreakdown.length ? Math.max(...this.case.scoreBreakdown.map((f: any) => f.weight)) : 1;
   }
 
+  // ---- Dev info (collapsed, inside the case) ----
+  private readonly ruleFiles: { [k: string]: string } = {
+    'authorization-gap': 'backend/.../Detection/Rules/AuthorizationGapRule.cs',
+    'entitlement-leakage': 'backend/.../Detection/Rules/EntitlementLeakageRule.cs',
+    'revenue-abuse': 'backend/.../Detection/Rules/RevenueDiscountAbuseRule.cs',
+    'content-scraping': 'backend/.../Detection/Rules/ContentScrapingRule.cs',
+    'coordinated-account': 'backend/.../Detection/Rules/CoordinatedAccountRule.cs',
+    'cve-exposure': 'backend/.../Detection/Rules/CveExposureRule.cs',
+    'paid-without-braintree': 'backend/.../Detection/Rules/PaidWithoutBraintreeRule.cs',
+    'discount-code-fraud': 'backend/.../Detection/Rules/DiscountCodeFraudRule.cs',
+    'same-subscription-region': 'backend/.../Detection/Rules/SameSubscriptionDifferentRegionRule.cs',
+    'blocked-ip-embargo': 'backend/.../Detection/Rules/BlockedIpEmbargoRule.cs'
+  };
+  copied = false;
+
+  get sourceFile(): string {
+    const r = this.case ? this.case.ruleId : '';
+    return this.ruleFiles[r] || (r && r.indexOf('nl-') === 0
+      ? 'backend/.../Detection/DeclarativeRuleEvaluator.cs (NL-authored rule)' : '—');
+  }
+
+  get rawJson(): string { return this.case ? JSON.stringify(this.case, null, 2) : ''; }
+
+  dev: any[] = [];
+  get devReq(): any { return this.dev && this.dev.length ? this.dev[0] : null; }
+
+  pretty(text: string | null): string {
+    if (!text) { return '(empty)'; }
+    try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text; }
+  }
+
+  copyJson(): void {
+    navigator.clipboard.writeText(this.rawJson).then(() => { this.copied = true; setTimeout(() => this.copied = false, 1500); });
+  }
+
   constructor(private route: ActivatedRoute, private api: ApiService) {}
 
   ngOnInit(): void {
@@ -44,7 +79,11 @@ export class CaseDetailComponent implements OnInit {
     });
   }
 
-  load(): void { this.api.case(this.id).subscribe(c => this.case = c); }
+  load(): void {
+    this.api.case(this.id).subscribe(c => this.case = c);
+    this.dev = [];
+    this.api.caseDev(this.id).subscribe(d => this.dev = d || [], () => this.dev = []);
+  }
 
   summarise(): void {
     this.aiBusy = true;

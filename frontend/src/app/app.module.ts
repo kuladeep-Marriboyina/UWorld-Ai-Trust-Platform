@@ -9,10 +9,9 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { CasesComponent } from './cases/cases.component';
 import { CaseDetailComponent } from './cases/case-detail.component';
 import { RulesComponent } from './rules/rules.component';
-import { DevComponent } from './dev/dev.component';
 
 @NgModule({
-  declarations: [AppComponent, DashboardComponent, CasesComponent, CaseDetailComponent, RulesComponent, DevComponent],
+  declarations: [AppComponent, DashboardComponent, CasesComponent, CaseDetailComponent, RulesComponent],
   imports: [BrowserModule, HttpClientModule, FormsModule, AppRoutingModule],
   providers: [],
   bootstrap: [AppComponent]

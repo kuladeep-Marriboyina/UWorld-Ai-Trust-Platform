@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("UWorld.TrustPlatform.Data")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a6f7521ee4ed7805e12ff38c95bbd7d8226353d8")]
 [assembly: System.Reflection.AssemblyProductAttribute("UWorld.TrustPlatform.Data")]
 [assembly: System.Reflection.AssemblyTitleAttribute("UWorld.TrustPlatform.Data")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

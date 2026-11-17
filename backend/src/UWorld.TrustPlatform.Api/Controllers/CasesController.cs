@@ -16,14 +16,21 @@ public sealed class CasesController : ControllerBase
     private readonly ICopilot _copilot;
     private readonly CostCalculator _cost;
     private readonly IUsageLedger _ledger;
+    private readonly IDevRequestLog _devLog;
 
-    public CasesController(IRiskCaseRepository repo, ICopilot copilot, CostCalculator cost, IUsageLedger ledger)
+    public CasesController(IRiskCaseRepository repo, ICopilot copilot, CostCalculator cost, IUsageLedger ledger, IDevRequestLog devLog)
     {
         _repo = repo;
         _copilot = copilot;
         _cost = cost;
         _ledger = ledger;
+        _devLog = devLog;
     }
+
+    /// <summary>Captured request payload + response for the HTTP call that produced this case (via the ledger).</summary>
+    [HttpGet("{id:int}/dev")]
+    public async Task<IReadOnlyList<DevRequestEntry>> GetCaseDev(int id, CancellationToken ct)
+        => await _devLog.GetForCaseAsync(id, ct);
 
     [HttpGet]
     public async Task<IReadOnlyList<RiskCase>> GetCases(

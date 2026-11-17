@@ -13,6 +13,7 @@ export class ApiService {
 
   cases(query = ''): Observable<any[]> { return this.http.get<any[]>(`${base}/api/cases${query}`); }
   case(id: number): Observable<any> { return this.http.get<any>(`${base}/api/cases/${id}`); }
+  caseDev(id: number): Observable<any[]> { return this.http.get<any[]>(`${base}/api/cases/${id}/dev`); }
   aiSummary(id: number) { return this.http.post<any>(`${base}/api/cases/${id}/ai-summary`, {}, lead); }
   assign(id: number, assignedTo: string) { return this.http.post<any>(`${base}/api/cases/${id}/assign`, { assignedTo }, lead); }
   escalate(id: number, notes: string) { return this.http.post<any>(`${base}/api/cases/${id}/escalate`, { notes }, lead); }

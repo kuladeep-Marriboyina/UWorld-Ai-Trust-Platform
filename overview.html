@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UWorld AI Trust &amp; Revenue Protection — USpark 2026</title>
+<style>
+  :root{
+    --ink:#0b1b2b; --ink-2:#2b3f52; --muted:#607089;
+    --bg:#f5f7fb; --card:#ffffff; --line:#e4e9f2;
+    --brand:#0b5fff; --brand-2:#0b3b8c; --accent:#00b8a9;
+    --crit:#e4322b; --high:#f06a1e; --med:#f5b301; --low:#5a9e5a;
+    --shadow:0 6px 24px rgba(13,40,80,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.55}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  a{color:var(--brand);text-decoration:none}
+
+  /* Hero */
+  header.hero{background:linear-gradient(135deg,#071a34 0%,#0b3b8c 55%,#0b5fff 100%);color:#fff;padding:54px 0 46px}
+  .kicker{display:inline-block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;background:rgba(255,255,255,.14);padding:5px 12px;border-radius:999px;margin-bottom:16px}
+  header.hero h1{font-size:40px;line-height:1.12;margin:0 0 12px;font-weight:700}
+  header.hero p.lede{font-size:18px;max-width:760px;margin:0 0 24px;color:#d7e4ff}
+  .team{font-size:14px;color:#b9cdf2}
+  .team b{color:#fff}
+  .badges{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px}
+  .badge{font-size:12.5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);padding:6px 11px;border-radius:8px}
+
+  /* Sections */
+  section{padding:44px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:24px;margin:0 0 6px}
+  h2 .n{color:var(--brand);font-weight:700;margin-right:10px}
+  .sub{color:var(--muted);margin:0 0 26px;max-width:780px}
+
+  /* Problem stats */
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .stat .big{font-size:30px;font-weight:700;color:var(--brand-2)}
+  .stat .lbl{font-size:13px;color:var(--muted);margin-top:4px}
+
+  .prob-list{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:8px}
+  .prob{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:10px;padding:14px 16px}
+  .prob b{display:block;margin-bottom:3px}
+  .prob span{font-size:14px;color:var(--ink-2)}
+
+  /* Flow */
+  .flow{display:flex;align-items:stretch;gap:12px;flex-wrap:wrap;margin-top:8px}
+  .node{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+  .node .t{font-weight:700;font-size:15px}
+  .node .d{font-size:13px;color:var(--muted);margin-top:5px}
+  .node .tag{font-size:11px;color:var(--brand);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+  .arrow{display:flex;align-items:center;color:var(--muted);font-size:24px}
+  @media(max-width:860px){.stat-grid{grid-template-columns:repeat(2,1fr)}.prob-list{grid-template-columns:1fr}.arrow{display:none}}
+
+  /* Rules */
+  .rules{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .rule{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .rule .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .rule h3{margin:0;font-size:16px}
+  .sev{font-size:11px;font-weight:700;color:#fff;border-radius:999px;padding:3px 10px;text-transform:uppercase;letter-spacing:.04em}
+  .sev.crit{background:var(--crit)} .sev.high{background:var(--high)} .sev.med{background:var(--med);color:#3a2b00}
+  .rule .cat{font-size:11px;color:var(--brand);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+  .rule p{font-size:14px;color:var(--ink-2);margin:6px 0 10px}
+  .ex{background:#f3f6fc;border:1px dashed #c9d7ee;border-radius:9px;padding:9px 11px;font-size:12.5px;color:#334}
+  .ex b{color:var(--brand-2)}
+  .depth{font-size:11px;color:var(--muted);margin-top:8px}
+  .depth.deep{color:var(--accent);font-weight:600}
+  @media(max-width:860px){.rules{grid-template-columns:1fr}}
+
+  /* Standout */
+  .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .f{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .f .ic{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0b5fff,#00b8a9);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-bottom:10px}
+  .f h3{margin:0 0 5px;font-size:15px}
+  .f p{margin:0;font-size:13.5px;color:var(--ink-2)}
+  @media(max-width:860px){.feat{grid-template-columns:1fr}}
+
+  /* Demo */
+  ol.demo{counter-reset:step;list-style:none;padding:0;margin:0;display:grid;gap:12px}
+  ol.demo li{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px 14px 56px;position:relative}
+  ol.demo li::before{counter-increment:step;content:counter(step);position:absolute;left:14px;top:50%;transform:translateY(-50%);width:28px;height:28px;background:var(--brand);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+  ol.demo b{color:var(--ink)}
+  ol.demo span{color:var(--ink-2);font-size:14px}
+
+  /* Stack / governance */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+  .panel h3{margin:0 0 12px;font-size:16px}
+  .panel ul{margin:0;padding-left:18px}
+  .panel li{margin:6px 0;font-size:14px;color:var(--ink-2)}
+  .chip{display:inline-block;font-size:12px;background:#eef3fc;color:var(--brand-2);border:1px solid #d6e2f7;border-radius:7px;padding:4px 9px;margin:3px 4px 3px 0}
+  @media(max-width:860px){.two{grid-template-columns:1fr}}
+
+  footer{padding:30px 0;color:var(--muted);font-size:13px;text-align:center}
+  .guard{background:#06231a;color:#d4fff6;border-radius:14px;padding:18px 20px;margin-top:8px;font-size:14px}
+  .guard b{color:#4fe3cf}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="kicker">USpark 2026 · Team “Support Sparkers”</span>
+    <h1>UWorld AI Trust &amp; Revenue Protection</h1>
+    <p class="lede">A single, <strong>read-only</strong> investigation platform that unifies scattered SQL&nbsp;Server and New&nbsp;Relic signals into evidence-backed cases — so teams see, understand and act on abuse in <strong>seconds instead of hours</strong>.</p>
+    <p class="team">Team: <b>Prakash Kosuri</b> · <b>Kuladeep M</b> · <b>Vishnu</b></p>
+    <div class="badges">
+      <span class="badge">.NET 8 · BackgroundService</span>
+      <span class="badge">Angular workspace</span>
+      <span class="badge">SQL Server (raw ADO.NET)</span>
+      <span class="badge">New Relic telemetry</span>
+      <span class="badge">AI copilot — explains, never enforces</span>
+      <span class="badge">Reuses the existing stack</span>
+    </div>
+  </div>
+</header>
+
+<!-- WHY -->
+<section>
+  <div class="wrap">
+    <h2><span class="n">01</span>The problem</h2>
+    <p class="sub">UWorld’s business rests on a simple promise: the right people get the right content, for the right product, at the right price. In an AI-accelerated threat era that promise is hard to keep — adversaries no longer need deep skill, only a prompt — and today we find most abuse the slow way: by hand, across scattered logs, days after the damage is done.</p>
+    <div class="stat-grid">
+      <div class="stat"><div class="big">Hours→Secs</div><div class="lbl">Time-to-detect, compressed</div></div>
+      <div class="stat"><div class="big">7</div><div class="lbl">Deterministic detection rules</div></div>
+      <div class="stat"><div class="big">1</div><div class="lbl">Unified case workspace</div></div>
+      <div class="stat"><div class="big">0</div><div class="lbl">Sensitive fields sent to the model</div></div>
+    </div>
+    <div class="prob-list">
+      <div class="prob"><b>Access &amp; authorization gaps</b><span>A bare status code never tells us whether protected content actually left the building.</span></div>
+      <div class="prob"><b>Subscription &amp; entitlement leakage</b><span>Access continues after expiry, cancellation or refund — checked against current state, not event-time.</span></div>
+      <div class="prob"><b>Revenue &amp; discount abuse</b><span>Zero-pay orders, price-below-policy, and discounts reused across related accounts.</span></div>
+      <div class="prob"><b>Content scraping &amp; IP theft</b><span>Automated, sequential harvesting of the proprietary question banks that are the core product.</span></div>
+      <div class="prob"><b>Coordinated account abuse</b><span>Shared logins and multi-account patterns, invisible one request at a time.</span></div>
+      <div class="prob"><b>Security &amp; release exposure</b><span>New CVEs matched to a live asset inventory; denial spikes right after a deployment.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section>
+  <div class="wrap">
+    <h2><span class="n">02</span>How it works</h2>
+    <p class="sub">A modular monolith — no new microservice fleet. A .NET <code>BackgroundService</code> ingests signals, a deterministic rule engine flags expected-vs-actual deviations into <code>RiskCase</code>s, and an AI copilot explains each case. Humans decide; the existing .NET authorization logic stays the single source of truth.</p>
+    <div class="flow">
+      <div class="node"><div class="tag">Ingest</div><div class="t">Signal sources</div><div class="d">Orders, payments, discounts, entitlements, auth outcomes, access events — from SQL Server &amp; New Relic.</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="tag">Normalise</div><div class="t">IngestionWorker</div><div class="d">Batches signals with correlation IDs on an interval (idempotent).</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="tag">Detect</div><div class="t">DetectionRuleEngine</div><div class="d">Versioned, idempotent rules → RiskCase + linked evidence + expected-vs-actual.</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="tag">Explain</div><div class="t">AI copilot</div><div class="d">Cited summary, labelled uncertainty, recommended checks. Advisory only.</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="tag">Act</div><div class="t">Analyst workspace</div><div class="d">Case queue, evidence timeline, assign / escalate / resolve with an audit trail.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- RULES -->
+<section>
+  <div class="wrap">
+    <h2><span class="n">03</span>The detection rules</h2>
+    <p class="sub">Deterministic rules define expected behaviour. Each produces a scored case with linked evidence. Four are built deep; three give broad coverage. Every example below is a real case the seeded demo produces.</p>
+    <div class="rules">
+      <div class="rule">
+        <div class="top"><span class="cat">Access</span><span class="sev crit">Critical</span></div>
+        <h3>Authorization Gap</h3>
+        <p>Protected content returned even though the correlated authorization outcome was <b>Denied</b> or <b>Missing</b> — separating “request denied” from “content actually returned.”</p>
+        <div class="ex"><b>Demo:</b> AuthResult=Denied yet <b>54,000 bytes</b> returned for <code>/qbank/package/40/q/1</code>.</div>
+        <div class="depth deep">● Deep rule · the insight judges remember</div>
+      </div>
+      <div class="rule">
+        <div class="top"><span class="cat">Entitlement</span><span class="sev high">High</span></div>
+        <h3>Entitlement Leakage</h3>
+        <p>Entitlement evaluated at <b>event-time</b>, not current state — access after expiry, cancellation or refund.</p>
+        <div class="ex"><b>Demo:</b> Entitlement 4004 <b>refunded</b>, yet package 30 accessed 4 days later.</div>
+        <div class="depth deep">● Deep rule · point-in-time correctness</div>
+      </div>
+      <div class="rule">
+        <div class="top"><span class="cat">Revenue</span><span class="sev high">High</span></div>
+        <h3>Revenue &amp; Discount Abuse</h3>
+        <p>Unexpected zero-pay purchases, price-below-policy orders, and one discount code reused across linked accounts.</p>
+        <div class="ex"><b>Demo:</b> Code <b>SAVE50</b> used by accounts 5, 6, 7 (one linked group).</div>
+        <div class="depth deep">● Deep rule</div>
+      </div>
+      <div class="rule">
+        <div class="top"><span class="cat">IP</span><span class="sev crit">Critical</span></div>
+        <h3>Content Scraping</h3>
+        <p>Scores volume, rate and <b>sequentiality</b> together to separate harvesting from genuine study.</p>
+        <div class="ex"><b>Demo:</b> <b>120 sequential</b> questions (1→120) in 4 min at 30/min.</div>
+        <div class="depth deep">● Deep rule · protects core IP</div>
+      </div>
+      <div class="rule">
+        <div class="top"><span class="cat">Account</span><span class="sev high">High</span></div>
+        <h3>Coordinated Account Abuse</h3>
+        <p>Weighted multi-signal scoring (device + discount + timing). <b>Never shared-IP alone.</b></p>
+        <div class="ex"><b>Demo:</b> Accounts 5, 6, 7 corroborate on 3 signals (shared device + reused discount).</div>
+        <div class="depth">○ Broad coverage</div>
+      </div>
+      <div class="rule">
+        <div class="top"><span class="cat">Security</span><span class="sev high">High</span></div>
+        <h3>CVE Exposure</h3>
+        <p>Matches a disclosed CVE to a live asset running the affected component + version.</p>
+        <div class="ex"><b>Demo:</b> <b>CVE-2024-21907</b> affects qbank-api running Newtonsoft.Json 12.0.1.</div>
+        <div class="depth">○ Broad coverage</div>
+      </div>
+      <div class="rule">
+        <div class="top"><span class="cat">Reliability</span><span class="sev high">High</span></div>
+        <h3>Release Regression</h3>
+        <p>Flags a spike in authorization denials in the hour after a deployment vs. the hour before.</p>
+        <div class="ex"><b>Demo:</b> Denials rose <b>0 → 18</b> right after qbank-api 26.7.2.0 shipped.</div>
+        <div class="depth">○ Broad coverage</div>
+      </div>
+      <div class="rule" style="background:linear-gradient(135deg,#0b3b8c,#0b5fff);color:#fff;border:none">
+        <div class="top"><span class="cat" style="color:#cfe0ff">Live</span></div>
+        <h3 style="color:#fff">Simulate attack → case on stage</h3>
+        <p style="color:#dce8ff">One click injects a fresh anomaly and runs an ingestion pass, so a real RiskCase appears live during the demo.</p>
+        <div class="ex" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#eaf2ff">POST <code>/api/demo/simulate</code> → new Critical case</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STANDOUT -->
+<section>
+  <div class="wrap">
+    <h2><span class="n">04</span>What makes it stand out</h2>
+    <p class="sub">Not “another alert tool.” It’s explainable, governed and demonstrably safe — the trust story is the product.</p>
+    <div class="feat">
+      <div class="f"><div class="ic">★</div><h3>Explainability-first</h3><p>Every flag shows <b>why</b> — cited evidence plus an expected-vs-actual diff, not just a status code.</p></div>
+      <div class="f"><div class="ic">⏱</div><h3>Event-time correctness</h3><p>Entitlements evaluated at the moment of access, not against current state.</p></div>
+      <div class="f"><div class="ic">⚖</div><h3>Transparent scoring</h3><p>Each case shows per-signal weight contributions — never one opaque number, never shared-IP alone.</p></div>
+      <div class="f"><div class="ic">🛡</div><h3>Governed AI</h3><p>A redaction layer strips emails &amp; IPs <b>in code</b> before anything reaches a model. Enforcement stays human-owned.</p></div>
+      <div class="f"><div class="ic">📜</div><h3>Full audit trail</h3><p>Created → AI summary → assigned → escalated → resolved, every step recorded per case.</p></div>
+      <div class="f"><div class="ic">🔭</div><h3>Self-observability</h3><p>The platform emits its own telemetry through the New Relic client — it watches itself.</p></div>
+    </div>
+    <div class="guard">
+      <b>Responsible by design:</b> The AI only investigates and explains — it never enforces access or changes accounts or payments. Deterministic rules stay the source of truth; a human always decides. No sensitive data is sent to the model, and every case keeps an auditable trail. <b>Defending the AI era with AI, responsibly.</b>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO + STACK -->
+<section>
+  <div class="wrap">
+    <h2><span class="n">05</span>The 90-second demo</h2>
+    <ol class="demo">
+      <li><b>Seed &amp; ingest.</b> <span>The worker turns synthetic SQL/New Relic data into 13 evidence-backed cases across all 7 rules.</span></li>
+      <li><b>Open the queue.</b> <span>Cases ranked by score &amp; severity — Critical authorization gaps and scraping at the top.</span></li>
+      <li><b>Investigate a case.</b> <span>Evidence timeline + expected-vs-actual: “Denied, yet 54,000 bytes returned.”</span></li>
+      <li><b>Ask the copilot.</b> <span>Cited summary, labelled uncertainty, recommended next checks — advisory only.</span></li>
+      <li><b>Resolve it.</b> <span>Assign → escalate → resolve; the audit trail records who did what.</span></li>
+      <li><b>Simulate live.</b> <span>One click spawns a brand-new Critical case on stage.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section style="border-bottom:none">
+  <div class="wrap two">
+    <div class="panel">
+      <h3>Architecture &amp; stack</h3>
+      <div>
+        <span class="chip">.NET 8 / ASP.NET Core</span><span class="chip">BackgroundService worker</span>
+        <span class="chip">Raw ADO.NET (no ORM)</span><span class="chip">SQL Server</span>
+        <span class="chip">Angular workspace</span><span class="chip">New Relic (mock client)</span>
+        <span class="chip">Pluggable AI copilot</span><span class="chip">Swagger / REST</span>
+      </div>
+      <ul>
+        <li><b>Domain</b> → entities, signals, RiskCase</li>
+        <li><b>Data</b> → raw ADO.NET repositories + stored procs</li>
+        <li><b>Detection</b> → engine + 7 versioned, idempotent rules</li>
+        <li><b>Ingestion</b> → hosted worker + New Relic telemetry</li>
+        <li><b>Ai</b> → ICopilot (mock today, enterprise LLM later) + redaction</li>
+        <li><b>Api</b> → cases, rules, AI summary, workflow, demo/simulate — with role-based access</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Value to UWorld</h3>
+      <ul>
+        <li><b>Protects revenue</b> — catches payment/entitlement mismatches and discount abuse before they compound.</li>
+        <li><b>Protects core IP</b> — detects scraping of the question banks that are the product.</li>
+        <li><b>Finds exposure faster</b> — real gaps vs. noise; new CVEs mapped to live assets.</li>
+        <li><b>Saves analyst hours</b> — correlates SQL + New Relic timelines into a reviewed case.</li>
+        <li><b>Shortens release diagnosis</b> — denial/payment spikes caught right after deploy.</li>
+        <li><b>Builds trust &amp; stays safe</b> — deterministic, human-approved, fully auditable.</li>
+      </ul>
+      <p style="margin:12px 0 0;color:var(--muted);font-size:13px"><b>Net effect:</b> less revenue leakage, stronger protection of content and students, faster and more confident investigations — all on the existing stack.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  UWorld AI Trust &amp; Revenue Protection · USpark 2026 · Prototype overview — read-only, advisory, and governed by design.
+</footer>
+
+</body>
+</html>

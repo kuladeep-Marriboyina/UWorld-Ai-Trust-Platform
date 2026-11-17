@@ -13,3 +13,4 @@ C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.T
 C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\refint\UWorld.TrustPlatform.Ai.dll
 C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\UWorld.TrustPlatform.Ai.pdb
 C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\ref\UWorld.TrustPlatform.Ai.dll
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ai\obj\Debug\net8.0\UWorld.TrustPlatform.Ai.sourcelink.json

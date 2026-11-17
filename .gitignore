@@ -1,0 +1,10 @@
+# Node dependencies (never commit these)
+**/node_modules/
+
+# IDE / OS
+.vs/
+*.user
+.DS_Store
+
+# Logs
+*.log

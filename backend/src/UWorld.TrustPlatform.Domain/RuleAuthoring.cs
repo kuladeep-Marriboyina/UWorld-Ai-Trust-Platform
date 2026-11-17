@@ -5,7 +5,9 @@ public sealed class RuleConfigEntry
 {
     public string RuleId { get; set; } = string.Empty;
     public string? Name { get; set; }
+    public string? Version { get; set; }
     public string? Category { get; set; }
+    public string? Description { get; set; }
     public string? Severity { get; set; }
     public bool Enabled { get; set; } = true;
     public string? ConfigJson { get; set; }

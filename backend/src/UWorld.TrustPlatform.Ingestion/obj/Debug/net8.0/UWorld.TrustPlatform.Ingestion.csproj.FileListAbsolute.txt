@@ -17,3 +17,4 @@ C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.T
 C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ingestion\obj\Debug\net8.0\refint\UWorld.TrustPlatform.Ingestion.dll
 C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ingestion\obj\Debug\net8.0\UWorld.TrustPlatform.Ingestion.pdb
 C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ingestion\obj\Debug\net8.0\ref\UWorld.TrustPlatform.Ingestion.dll
+C:\Users\kmarriboyina\source\repos\uworld-ai-trust-platform\backend\src\UWorld.TrustPlatform.Ingestion\obj\Debug\net8.0\UWorld.TrustPlatform.Ingestion.sourcelink.json

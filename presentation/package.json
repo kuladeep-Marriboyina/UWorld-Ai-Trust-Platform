@@ -1,0 +1,12 @@
+{
+  "name": "uworld-ai-trust-ppt",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Generates the USpark 2026 presentation for UWorld AI Trust & Revenue Protection",
+  "scripts": {
+    "build": "node generate.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "^3.12.0"
+  }
+}

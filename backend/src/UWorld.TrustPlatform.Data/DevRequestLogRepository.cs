@@ -8,6 +8,7 @@ public interface IDevRequestLog
     Task AddAsync(DevRequestEntry e, CancellationToken ct = default);
     Task<IReadOnlyList<DevRequestEntry>> ListAsync(int take, string? status, string? search, CancellationToken ct = default);
     Task<DevRequestEntry?> GetAsync(long id, CancellationToken ct = default);
+    Task<IReadOnlyList<DevRequestEntry>> GetForCaseAsync(int caseId, CancellationToken ct = default);
     Task ClearAsync(CancellationToken ct = default);
 }
 
@@ -80,6 +81,21 @@ public sealed class DevRequestLogRepository : IDevRequestLog
         cmd.Parameters.AddWithValue("@Id", id);
         await using var r = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await r.ReadAsync(ct).ConfigureAwait(false) ? Map(r) : null;
+    }
+
+    /// <summary>Captured HTTP calls whose RequestId produced this case (joined via the ledger's CaseRaised rows).</summary>
+    public async Task<IReadOnlyList<DevRequestEntry>> GetForCaseAsync(int caseId, CancellationToken ct = default)
+    {
+        var sql = $@"SELECT TOP 5 {Columns} FROM dbo.DevRequestLog
+                     WHERE RequestId IN (SELECT RequestId FROM dbo.RequestLedger WHERE CaseId = @CaseId)
+                     ORDER BY CASE WHEN Method <> 'GET' THEN 0 ELSE 1 END, Id DESC";
+        await using var cn = await _factory.OpenAsync(ct).ConfigureAwait(false);
+        await using var cmd = new SqlCommand(sql, cn);
+        cmd.Parameters.AddWithValue("@CaseId", caseId);
+        var rows = new List<DevRequestEntry>();
+        await using var r = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await r.ReadAsync(ct).ConfigureAwait(false)) rows.Add(Map(r));
+        return rows;
     }
 
     public async Task ClearAsync(CancellationToken ct = default)
