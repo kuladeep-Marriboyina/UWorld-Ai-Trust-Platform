@@ -1,176 +1,306 @@
-<a class="back" routerLink="/cases">← Back to cases</a>
+<div class="page">
+  <div class="crumbs no-print"><a routerLink="/cases">Cases</a> / #{{ id }}</div>
+  <div class="callout bad" *ngIf="error">{{ error }}</div>
+  <div class="callout info mb12 flashbar" *ngIf="flash">⚡ {{ flash }}</div>
 
-<div *ngIf="case" class="cd">
-  <!-- header -->
-  <div class="card cd-head sevbar-{{ case.severity | lowercase }}">
-    <div class="cd-top">
-      <span class="sev {{ case.severity | lowercase }}">{{ case.severity }}</span>
-      <span class="chip">{{ case.ruleId }} · {{ case.ruleVersion }}</span>
-      <span class="pill {{ case.status | lowercase }}">{{ case.status }}</span>
-      <span class="muted cd-id">Case #{{ case.caseId }}</span>
+  <ng-container *ngIf="d && c; else loadingTpl">
+    <!-- ======= header ======= -->
+    <section class="card head" [ngClass]="'sevtop-' + sevClass(c.severity)">
+      <div class="row wrap">
+        <span class="sev" [ngClass]="sevClass(c.severity)">{{ c.severity }}</span>
+        <span class="status" [ngClass]="c.status | lowercase">{{ c.status }}</span>
+        <span class="disp" *ngIf="c.disposition" [ngClass]="c.disposition">{{ c.disposition === 'ConfirmedFraud' ? 'Confirmed fraud' : c.disposition === 'FalsePositive' ? 'False positive' : 'Benign' }}</span>
+        <a class="chip outline clickable" [routerLink]="['/rules', c.ruleId]" title="Open the rule that raised this">⚖ {{ c.ruleId }} · {{ c.ruleVersion }}</a>
+        <span class="chip">{{ c.category }}</span>
+        <span class="spacer"></span>
+        <span class="faint small">Case #{{ c.caseId }}</span>
+      </div>
+      <h1 class="title">{{ c.title }}</h1>
+      <div class="meta">
+        <span>Raised <b>{{ c.createdUtc | ago }}</b> <span class="faint">({{ c.createdUtc | utcdate }})</span></span>
+        <span *ngIf="c.detectionLatencyMs != null" class="chip good">⚡ detected {{ c.detectionLatencyMs | dur }} after the triggering event</span><app-info k="latency"></app-info>
+        <span *ngIf="c.detectionLatencyMs == null" class="chip">found on backfill sweep <app-info k="backfill"></app-info></span>
+        <span *ngIf="span()">Attack window <b>{{ span() }}</b><app-info k="attackWindow"></app-info></span>
+        <span *ngIf="c.updatedUtc && c.updatedUtc !== c.createdUtc">Last change {{ c.updatedUtc | ago }}</span>
+        <span>Owner <b>{{ c.assignedTo || 'nobody' }}</b></span>
+        <span *ngIf="c.acknowledgedUtc">Acknowledged by {{ c.acknowledgedBy }} {{ c.acknowledgedUtc | ago }}</span>
+      </div>
+
+      <div class="actions no-print">
+        <ng-container *ngIf="canWork; else readOnly">
+          <ng-container *ngIf="open">
+            <button class="btn" *ngIf="!c.acknowledgedUtc" (click)="acknowledge()" [disabled]="!!busy">👁 Acknowledge</button>
+            <button class="btn" *ngIf="c.assignedTo !== session.user.username" (click)="assignMe()" [disabled]="!!busy">👤 Take ownership</button>
+            <button class="btn" *ngIf="c.status !== 'Escalated'" (click)="modal = 'escalate'">⏫ Escalate</button>
+            <button class="btn primary" (click)="modal = 'verdict'">⚖ Record verdict</button>
+          </ng-container>
+          <button class="btn" *ngIf="!open" (click)="reopen()" [disabled]="!!busy">↺ Reopen</button>
+        </ng-container>
+        <ng-template #readOnly><span class="chip warn">Read-only — {{ session.user.displayName }} ({{ session.user.role }}) can view but not act</span></ng-template>
+        <span class="spacer"></span>
+        <button class="btn ghost" (click)="openShare()">↗ Share</button>
+        <button class="btn ghost" (click)="print()">⎙ Print</button>
+      </div>
+    </section>
+
+    <div class="grid g-side-main mt16">
+      <!-- ======= left: why / impact / playbook ======= -->
+      <div class="col" style="gap:16px">
+        <section class="card">
+          <div class="card-h"><h2>Why it was flagged <app-info k="score"></app-info></h2><span class="sub"><app-info k="confidence"></app-info> confidence {{ c.confidence * 100 | number:'1.0-0' }}%</span></div>
+          <app-gauge [value]="c.score" [threshold]="d.scoring.threshold"></app-gauge>
+          <div class="xs faint center" *ngIf="d.scoring.threshold">▏ alert line<app-info k="alertLine"></app-info> at {{ d.scoring.threshold }} · bands: Medium 55 · High 70 · Critical 85</div>
+          <div class="factors">
+            <div class="factor" *ngFor="let f of d.scoring.factors">
+              <div class="row"><b class="small" style="flex:1">{{ f.label }}<app-info [k]="f.signal"></app-info></b><span class="mono small">+{{ f.weight | number:'1.0-0' }}</span></div>
+              <div class="meter mt8"><i [style.width.%]="100 * f.weight / maxWeight()" [style.background]="f.signal === 'SharedNetwork' ? 'var(--text-3)' : 'var(--accent)'"></i></div>
+              <div class="explain">{{ f.rationale }}</div>
+            </div>
+          </div>
+          <div class="callout mt12 xs" *ngIf="d.scoring.gate">🛡 {{ d.scoring.gate }}</div>
+        </section>
+
+        <section class="card">
+          <div class="card-h"><h2>Business impact <app-info k="impact"></app-info></h2></div>
+          <div class="impact">{{ c.businessImpactUsd | usd:'cents' }}</div>
+          <div class="explain" style="font-size:12.5px">{{ c.impactFormula || 'Estimated from the rule that raised this case.' }}</div>
+        </section>
+
+        <section class="card">
+          <div class="card-h"><h2>Response playbook <app-info k="playbook"></app-info></h2><span class="sub">{{ stepsDone }}/{{ c.playbook.length }} done</span></div>
+          <div class="meter mb12"><i [style.width.%]="c.playbook.length ? 100 * stepsDone / c.playbook.length : 0" style="background:var(--good)"></i></div>
+          <div class="step" *ngFor="let s of c.playbook; let i = index" [class.done]="stepDone(s)">
+            <span class="num-badge">{{ stepDone(s) ? '✓' : i + 1 }}</span>
+            <div style="flex:1;min-width:0">
+              <div class="small">{{ s }}</div>
+              <div class="xs faint" *ngIf="stepDone(s) as done">done by {{ done.actor }} · {{ done.occurredUtc | ago }}</div>
+            </div>
+            <button class="btn xs" *ngIf="!stepDone(s) && canWork" (click)="markStep(s)" [disabled]="busy === 'step:' + s">Mark done</button>
+          </div>
+          <div class="xs faint mt8">Sentinel never blocks or refunds on its own — steps are carried out in the owning systems and recorded here for the audit trail.</div>
+        </section>
+      </div>
+
+      <!-- ======= main ======= -->
+      <div class="col" style="gap:16px;min-width:0">
+        <section class="card">
+          <div class="grid g2" style="gap:14px">
+            <div><div class="section-title">What happened</div><div class="small">{{ c.actual }}</div></div>
+            <div><div class="section-title">What policy expects</div><div class="small muted">{{ c.expected }}</div></div>
+          </div>
+          <div class="stats mt16">
+            <div class="stat" *ngIf="d.stats.accounts"><b>{{ d.stats.accounts }}</b><span>accounts</span></div>
+            <div class="stat" *ngIf="d.stats.ips"><b>{{ d.stats.ips }}</b><span>IP address(es)</span></div>
+            <div class="stat" *ngIf="d.stats.devices"><b>{{ d.stats.devices }}</b><span>device(s)</span></div>
+            <div class="stat" *ngIf="d.stats.cards"><b>{{ d.stats.cards }}</b><span>card(s)</span></div>
+            <div class="stat"><b>{{ d.stats.subscriptions }}</b><span>subscriptions</span></div>
+            <div class="stat"><b>{{ d.stats.apiCalls }}</b><span>API calls</span></div>
+            <div class="stat" *ngIf="d.stats.failedLogins"><b>{{ d.stats.failedLogins }}</b><span>failed logins</span></div>
+            <div class="stat"><b>{{ c.evidence.length }}</b><span>evidence rows</span></div>
+          </div>
+        </section>
+
+        <!-- copilot -->
+        <section class="card copilot">
+          <div class="card-h">
+            <span class="ai-badge" [class.off]="summary && summary.source !== 'claude'">✦ Investigation copilot</span><app-info k="copilot"></app-info>
+            <h2></h2>
+            <span class="sub" *ngIf="summary">{{ summary.source === 'claude' ? summary.model : 'deterministic (no AI key)' }} · {{ summary.generatedUtc | ago }}</span>
+            <button class="btn sm" (click)="generateSummary()" [disabled]="summaryBusy">
+              <span class="spin" *ngIf="summaryBusy"></span>{{ summary ? 'Regenerate' : 'Summarise this case' }}
+            </button>
+          </div>
+          <div *ngIf="!summary && !summaryBusy" class="muted small">
+            Reads only this case's recorded facts (identifiers masked, customer text screened for prompt injection) and explains it in plain English with next steps. Advisory only — it can't change anything.
+          </div>
+          <ng-container *ngIf="summary">
+            <div class="row wrap mb8">
+              <span class="verdict" [ngClass]="summary.verdict">{{ verdictLabel(summary.verdict) }}</span>
+              <b class="small" style="flex:1">{{ summary.headline }}</b>
+            </div>
+            <p class="small narrative">{{ summary.narrative }}</p>
+            <div class="grid g2 mt12" style="gap:14px">
+              <div><div class="section-title">Key findings</div><ul class="lst"><li *ngFor="let f of summary.keyFindings">{{ f }}</li></ul></div>
+              <div><div class="section-title">Recommended next steps</div><ol class="lst"><li *ngFor="let a of summary.recommendedActions">{{ a }}</li></ol></div>
+            </div>
+            <div class="mt8"><span class="chip warn mt8" *ngFor="let u of summary.uncertaintyLabels" style="white-space:normal;height:auto;padding:4px 8px;margin:2px 4px 0 0">{{ u }}</span></div>
+            <div class="xs faint mt8">{{ summary.disclaimer }}</div>
+            <div class="callout warn mt8 small" *ngIf="summary.source !== 'claude'"><b>Running without AI.</b> This summary was assembled from the case's recorded evidence by rules, not by Claude. To connect Claude, add an Anthropic key (see README → “Turn on AI”) and restart the API.</div>
+          </ng-container>
+
+          <div class="divider"></div>
+          <form class="row" (ngSubmit)="ask()">
+            <input name="q" [(ngModel)]="question" placeholder="Ask about this case — e.g. “Have any of these accounts paid?”" autocomplete="off" />
+            <button class="btn" type="submit" [disabled]="asking || !question.trim()"><span class="spin" *ngIf="asking"></span>Ask</button>
+          </form>
+          <div class="row wrap mt8"><button class="chip clickable outline" *ngFor="let s of suggestions" (click)="ask(s)">{{ s }}</button></div>
+          <div class="qa" *ngFor="let x of answers">
+            <div class="q">› {{ x.q }}</div>
+            <div class="a small">{{ x.a.answer }}</div>
+            <div class="xs faint mono fact" *ngFor="let f of x.a.supportingFacts">{{ f }}</div>
+          </div>
+        </section>
+
+        <!-- tabs -->
+        <section class="card">
+          <div class="tabs">
+            <button [class.on]="tab === 'graph'" (click)="tab = 'graph'" *ngIf="d.nodes.length">Link graph</button>
+            <button [class.on]="tab === 'accounts'" (click)="tab = 'accounts'" *ngIf="d.accounts.length">Accounts <span class="count">{{ d.accounts.length }}</span></button>
+            <button [class.on]="tab === 'timeline'" (click)="tab = 'timeline'">Timeline <span class="count">{{ d.timeline.length }}</span></button>
+            <button [class.on]="tab === 'evidence'" (click)="tab = 'evidence'">Evidence <span class="count">{{ c.evidence.length }}</span></button>
+            <button [class.on]="tab === 'related'" (click)="tab = 'related'">Related &amp; reputation <span class="count">{{ d.related.length + d.reputation.length }}</span></button>
+            <button [class.on]="tab === 'activity'" (click)="tab = 'activity'">Case log <span class="count">{{ c.activity.length }}</span></button>
+          </div>
+
+          <div *ngIf="tab === 'graph'">
+            <div class="muted small mb8"><app-info k="linkGraph"></app-info> Every account in this case and the identifiers that tie them together. Hover to trace links; identifiers shared by only one account are hidden.</div>
+            <app-link-graph [nodesIn]="d.nodes" [edgesIn]="d.edges"></app-link-graph>
+          </div>
+
+          <div *ngIf="tab === 'accounts'" class="accts">
+            <div class="acct" *ngFor="let a of d.accounts">
+              <div class="row wrap">
+                <span class="av-sm">{{ a.firstName[0] }}{{ a.lastName[0] }}</span>
+                <div style="flex:1;min-width:0"><b>{{ a.firstName }} {{ a.lastName }}</b> <span class="faint small">#{{ a.userId }}</span><div class="mono xs muted ellipsis">{{ a.email }}</div></div>
+                <span class="chip xs" *ngIf="a.failedLogins">{{ a.failedLogins }} failed logins</span>
+                <span class="chip xs">{{ a.apiCalls }} API calls</span>
+              </div>
+              <dl class="kv mt8 xs">
+                <dt>Created</dt><dd>{{ a.created | utcdate }} via {{ a.signupSource }}</dd>
+                <dt>Registered from</dt><dd class="mono">{{ a.registrationIp }} <span class="faint">({{ a.countryCode || '??' }})</span></dd>
+                <dt>Device</dt><dd class="mono">{{ a.deviceFingerprint }}</dd>
+                <dt>Client</dt><dd class="mono ellipsis" [title]="a.userAgent">{{ a.userAgent || '—' }}</dd>
+                <dt>Subscriptions</dt><dd><span *ngFor="let s of a.subscriptions" class="chip xs" style="margin:0 4px 4px 0">{{ s.package }} · {{ s.listPrice | usd }}</span><span *ngIf="!a.subscriptions.length" class="faint">none</span></dd>
+                <dt>Payments</dt><dd><span *ngFor="let p of a.payments" class="chip xs" style="margin:0 4px 4px 0">{{ p.kind }} {{ p.amount | usd:'cents' }}<ng-container *ngIf="p.cardLast4"> · •••• {{ p.cardLast4 }}</ng-container></span><span *ngIf="!a.payments.length" class="faint">none</span></dd>
+              </dl>
+            </div>
+          </div>
+
+          <div *ngIf="tab === 'timeline'">
+            <div class="seg mb12">
+              <button [class.on]="timelineFilter === 'all'" (click)="timelineFilter = 'all'">Everything</button>
+              <button [class.on]="timelineFilter === 'key'" (click)="timelineFilter = 'key'">Key events</button>
+              <button [class.on]="timelineFilter === 'human'" (click)="timelineFilter = 'human'">Detection &amp; response</button>
+            </div>
+            <div class="tl">
+              <div class="tl-item" *ngFor="let t of timeline" [class.hl]="t.highlight" [ngClass]="t.kind">
+                <div class="tl-time mono">{{ t.utc | utcdate:'time' }}<div class="xs faint">{{ t.utc | utcdate:'day' }}</div></div>
+                <div class="tl-dot">{{ kindIcon(t.kind) }}</div>
+                <div class="tl-body"><div class="small">{{ t.title }}</div><div class="xs faint">{{ t.detail }}<span *ngIf="t.ip"> · {{ t.ip }}</span></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="tab === 'evidence'">
+            <table class="t compact">
+              <thead><tr><th>Source</th><th>Record</th><th>What it shows</th><th>When (UTC)</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let e of c.evidence">
+                  <td><span class="chip xs">{{ e.sourceType }}</span></td>
+                  <td class="mono xs">{{ e.sourceId }}</td>
+                  <td><div class="small">{{ e.label }}</div><div class="xs faint mono">{{ e.detail }}</div></td>
+                  <td class="mono xs">{{ e.occurredUtc ? (e.occurredUtc | utcdate) : '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div *ngIf="tab === 'related'">
+            <div class="section-title">Identifier reputation<app-info k="reputation"></app-info></div>
+            <div class="reps">
+              <div class="rep" *ngFor="let r of d.reputation" [class.bad]="r.blocked || r.otherCases > 0 || r.accounts >= 5">
+                <div class="row"><span>{{ repIcon(r.type) }}</span><span class="ent-type">{{ r.type }}</span><span class="ent ellipsis" style="flex:1">{{ r.value }}</span></div>
+                <div class="small mt8"><b>{{ r.verdict }}</b></div>
+                <div class="xs faint mt8">{{ r.accounts }} account(s) · {{ r.apiCalls }} API calls · {{ r.failedLogins }} failed logins<span *ngIf="r.countries.length"> · {{ r.countries.join(', ') }}</span><span *ngIf="r.firstSeenUtc"> · first seen {{ r.firstSeenUtc | ago }}</span></div>
+              </div>
+              <div class="faint small" *ngIf="!d.reputation.length">No network/device identifiers on this case.</div>
+            </div>
+            <div class="section-title mt16">Cases sharing an identifier<app-info k="related"></app-info></div>
+            <table class="t compact" *ngIf="d.related.length; else noRel">
+              <tbody>
+                <tr class="click" *ngFor="let r of d.related" [routerLink]="['/cases', r.caseId]">
+                  <td><span class="sev" [ngClass]="sevClass(r.severity)">{{ r.severity }}</span></td>
+                  <td><div class="small b">#{{ r.caseId }} {{ r.title }}</div><div class="xs faint">shares {{ r.sharedType }} <span class="mono">{{ r.sharedValue }}</span></div></td>
+                  <td class="small"><span class="status" [ngClass]="r.status | lowercase">{{ r.status }}</span></td>
+                  <td class="xs faint">{{ r.createdUtc | ago }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <ng-template #noRel><div class="faint small">No other case shares an IP, device, card, email or account with this one.</div></ng-template>
+          </div>
+
+          <div *ngIf="tab === 'activity'">
+            <form class="row mb12" (ngSubmit)="addComment()" *ngIf="canWork">
+              <input name="comment" [(ngModel)]="comment" placeholder="Add a note for the team (findings, calls made, decisions)…" />
+              <button class="btn" type="submit" [disabled]="!comment.trim() || busy === 'comment'">Post</button>
+            </form>
+            <div class="log" *ngFor="let a of c.activity.slice().reverse()">
+              <span class="log-ic">{{ activityIcon(a.action) }}</span>
+              <div style="flex:1;min-width:0">
+                <div class="small"><b>{{ a.action === 'ActionTaken' ? 'Action taken' : a.action === 'AiSummary' ? 'AI summary' : a.action }}</b> · {{ a.actor }} <span class="faint xs">{{ a.occurredUtc | ago }}</span></div>
+                <div class="small muted" *ngIf="a.notes">{{ a.notes }}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
-    <h1 class="cd-title">{{ case.title }}</h1>
+  </ng-container>
 
-    <div class="cd-stats">
-      <div class="st">
-        <div class="st-l">Risk score</div>
-        <div class="st-v">{{ case.score | number:'1.0-0' }}<small>/100</small></div>
-        <div class="bar"><i [style.width.%]="case.score"></i></div>
-      </div>
-      <div class="st">
-        <div class="st-l">Confidence</div>
-        <div class="st-v">{{ case.confidence * 100 | number:'1.0-0' }}<small>%</small></div>
-        <div class="bar"><i [style.width.%]="case.confidence * 100"></i></div>
-      </div>
-      <div class="st">
-        <div class="st-l">At risk
-          <span class="popover"><span class="infoic" (click)="showImpact = !showImpact" title="How is this at risk?">i</span>
-            <span class="popbox" *ngIf="showImpact"><span class="arrow"></span>
-              <b>How this ${{ case.businessImpactUsd | number:'1.2-2' }} is at risk</b>
-              <span class="f">{{ impact.formula }}</span>
-              {{ impact.note }}
-            </span>
-          </span>
-        </div>
-        <div class="st-v money">${{ case.businessImpactUsd | number:'1.2-2' }}</div>
-      </div>
-      <div class="st">
-        <div class="st-l">Assigned to</div>
-        <div class="st-v small">{{ case.assignedTo || 'Unassigned' }}</div>
-      </div>
+  <ng-template #loadingTpl>
+    <div class="card" *ngIf="!error"><div class="skel" style="width:30%"></div><div class="skel mt12" style="height:28px;width:70%"></div><div class="skel mt12" style="width:50%"></div></div>
+  </ng-template>
+</div>
+
+<!-- ======= modals ======= -->
+<div class="backdrop" *ngIf="modal === 'verdict'" (click)="modal = ''">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-h"><h2>Record verdict on case #{{ id }} <app-info k="verdict"></app-info></h2><button class="btn ghost xs" (click)="modal = ''">✕</button></div>
+    <div class="modal-b col">
+      <div class="muted small">Your verdict trains the numbers: it sets each rule's precision and the "protected" figure on the command center.</div>
+      <label class="vopt" [class.on]="verdict === 'ConfirmedFraud'"><input type="radio" name="v" value="ConfirmedFraud" [(ngModel)]="verdict" /><span><b>Confirmed fraud</b><small>The activity is abusive. Impact counts as protected revenue.</small></span></label>
+      <label class="vopt" [class.on]="verdict === 'FalsePositive'"><input type="radio" name="v" value="FalsePositive" [(ngModel)]="verdict" /><span><b>False positive</b><small>The rule was wrong. Counts against the rule's precision — say why so the rule can be tuned.</small></span></label>
+      <label class="vopt" [class.on]="verdict === 'Benign'"><input type="radio" name="v" value="Benign" [(ngModel)]="verdict" /><span><b>Benign / expected</b><small>Real activity, but allowed (e.g. a known partner or test).</small></span></label>
+      <label class="field">Notes <span class="hint">{{ verdict === 'FalsePositive' ? 'required — what made it legitimate?' : 'what you found and did' }}</span>
+        <textarea [(ngModel)]="verdictNotes" placeholder="e.g. Accounts suspended, trials revoked; IP added to step-up list."></textarea></label>
+      <label class="inline-check"><input type="checkbox" [(ngModel)]="resolve" /> Resolve the case now</label>
     </div>
-
-    <div class="cd-facts">
-      <div><b>User</b><span class="mono">{{ case.accountId || '—' }}</span></div>
-      <div><b>Entity</b><span class="mono">{{ case.entityRef || '—' }}</span></div>
-      <div><b>Raised</b><span class="mono">{{ case.createdUtc | date:'MMM d, y · HH:mm:ss' }}</span></div>
-      <div><b>Resolved</b><span class="mono">{{ case.resolvedUtc ? (case.resolvedUtc | date:'MMM d, y · HH:mm:ss') : '—' }}</span></div>
+    <div class="modal-f">
+      <button class="btn ghost" (click)="modal = ''">Cancel</button>
+      <button class="btn primary" (click)="doVerdict()" [disabled]="busy === 'verdict' || (verdict === 'FalsePositive' && !verdictNotes.trim())">Save verdict</button>
     </div>
   </div>
+</div>
 
-  <div class="cd-grid">
-    <!-- left: the investigation -->
-    <div class="cd-main">
-      <div class="card">
-        <h2>Expected vs actual</h2>
-        <div class="cmp">
-          <div class="cmp-exp"><div class="cmp-l">✓ Expected (policy)</div>{{ case.expected }}</div>
-          <div class="cmp-act">
-            <div class="cmp-l">✗ Actual (observed)</div>
-            <div class="cmp-main">{{ actualParts[0] }}</div>
-            <ul *ngIf="actualParts.length > 1"><li *ngFor="let p of actualParts.slice(1)">{{ p }}</li></ul>
-          </div>
-        </div>
-      </div>
+<div class="backdrop" *ngIf="modal === 'escalate'" (click)="modal = ''">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-h"><h2>Escalate case #{{ id }}</h2><button class="btn ghost xs" (click)="modal = ''">✕</button></div>
+    <div class="modal-b"><label class="field">Why does this need a lead / another team?<textarea [(ngModel)]="escalateNotes" placeholder="e.g. Card ring touches B2B accounts — needs Finance sign-off before suspension."></textarea></label></div>
+    <div class="modal-f"><button class="btn ghost" (click)="modal = ''">Cancel</button><button class="btn primary" (click)="doEscalate()" [disabled]="!escalateNotes.trim()">Escalate</button></div>
+  </div>
+</div>
 
-      <div class="card">
-        <h2>Why it was flagged</h2>
-        <div class="factor" *ngFor="let f of case.scoreBreakdown">
-          <div class="fx-h"><b>{{ f.signal }}</b><span class="fx-w">+{{ f.weight }}</span></div>
-          <div class="bar"><i [style.width.%]="f.weight / maxWeight * 100"></i></div>
-          <div class="fx-r">{{ f.rationale }}</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Evidence timeline <span class="muted cnt">{{ case.evidence.length }} items</span></h2>
-        <div class="tl">
-          <div class="tl-i" *ngFor="let e of timeline">
-            <div class="tl-dot"></div>
-            <div class="tl-c">
-              <div class="tl-h">
-                <span class="chip">{{ e.sourceType }} #{{ e.sourceId }}</span>
-                <span class="tl-t mono">{{ e.occurredUtc ? (e.occurredUtc | date:'MMM d, HH:mm:ss') : 'no timestamp' }}</span>
-              </div>
-              <div class="tl-l">{{ e.label }}</div>
-              <div class="tl-d mono" *ngIf="e.detail">{{ e.detail }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Audit trail</h2>
-        <div class="muted" *ngIf="!case.activity.length" style="font-size:13px">No activity yet.</div>
-        <div class="act" *ngFor="let a of case.activity">
-          <span class="act-a">{{ a.action }}</span>
-          <span class="act-n">{{ a.notes }} <span class="muted">— {{ a.actor }}</span></span>
-          <span class="act-t mono">{{ a.occurredUtc | date:'MMM d, HH:mm:ss' }}</span>
-        </div>
-      </div>
-
-      <details class="card devinfo">
-        <summary>
-          <span class="dev-sum">{{ '{' }}&#8203;{{ '}' }} Dev info</span>
-          <span class="muted" style="font-size:12px">technical detail for engineers — click to expand</span>
-        </summary>
-        <div class="dev-grid">
-          <div><b>Case key</b><span class="mono">{{ case.caseKey }}</span></div>
-          <div><b>Rule</b><span class="mono">{{ case.ruleId }} · {{ case.ruleVersion }}</span></div>
-          <div><b>Severity · Score · Confidence</b><span class="mono">{{ case.severity }} · {{ case.score }} · {{ case.confidence }}</span></div>
-          <div><b>Account · Entity</b><span class="mono">{{ case.accountId || '—' }} · {{ case.entityRef || '—' }}</span></div>
-          <div><b>Business impact</b><span class="mono">${{ case.businessImpactUsd }}</span></div>
-          <div><b>Created (UTC)</b><span class="mono">{{ case.createdUtc }}</span></div>
-          <div class="span2"><b>Produced by</b><span class="mono">{{ sourceFile }}</span></div>
-        </div>
-        <div *ngIf="devReq" class="dev-http">
-          <div class="dev-http-h">
-            <span class="httpm {{ devReq.method | lowercase }}">{{ devReq.method }}</span>
-            <span class="mono dev-path">{{ devReq.path }}{{ devReq.queryString }}</span>
-            <span class="https" [class.ok]="devReq.statusCode < 400" [class.err]="devReq.statusCode >= 400">{{ devReq.statusCode }}</span>
-            <span class="muted" style="font-size:11.5px">{{ devReq.durationMs }}ms · req {{ devReq.requestId }}</span>
-          </div>
-          <div class="dev-io">
-            <div class="dev-col">
-              <div class="ai-l" style="margin:0 0 4px">Request payload</div>
-              <pre class="dev-raw sm">{{ pretty(devReq.requestBody) }}</pre>
-            </div>
-            <div class="dev-col">
-              <div class="ai-l" style="margin:0 0 4px">Response</div>
-              <pre class="dev-raw sm">{{ pretty(devReq.responseBody) }}</pre>
-            </div>
-          </div>
-        </div>
-        <div *ngIf="!devReq" class="muted" style="font-size:12.5px;padding:0 16px 6px">
-          No captured HTTP call for this case — it was raised by the background worker. The stored case is below.
-        </div>
-
-        <div class="dev-raw-h">
-          <span class="ai-l" style="margin:0">Raw case JSON ({{ case.evidence.length }} evidence · {{ case.scoreBreakdown.length }} factors)</span>
-          <button class="btn ghost xs" (click)="copyJson()">{{ copied ? 'Copied ✓' : 'Copy JSON' }}</button>
-        </div>
-        <pre class="dev-raw">{{ rawJson }}</pre>
-      </details>
+<div class="backdrop" *ngIf="modal === 'share'" (click)="modal = ''">
+  <div class="modal wide" (click)="$event.stopPropagation()">
+    <div class="modal-h">
+      <h2>Share case #{{ id }}</h2>
+      <label class="inline-check small"><input type="checkbox" [(ngModel)]="redact" (change)="loadShare()" /> Mask customer identifiers</label>
+      <button class="btn ghost xs" (click)="modal = ''">✕</button>
     </div>
-
-    <!-- right: actions + AI -->
-    <div class="cd-side">
-      <div class="card">
-        <h2>Actions</h2>
-        <div class="acts">
-          <button class="btn ghost" (click)="assign()">Assign to me</button>
-          <button class="btn warn" (click)="escalate()">Escalate</button>
-          <button class="btn ok" (click)="resolve()">Resolve</button>
-        </div>
-        <div class="muted" style="font-size:12px;margin-top:8px">Every action is written to the audit trail. Enforcement stays with humans.</div>
+    <div class="modal-b">
+      <div class="muted small mb12">Built only from recorded facts — no AI text. Use the chat version for Slack/Teams, the full report for tickets, email or an incident doc.</div>
+      <div class="tabs">
+        <button [class.on]="shareTab === 'chat'" (click)="shareTab = 'chat'">Chat summary</button>
+        <button [class.on]="shareTab === 'md'" (click)="shareTab = 'md'">Full report (Markdown)</button>
       </div>
-
-      <div class="card">
-        <h2>AI investigation copilot</h2>
-        <button class="btn" style="width:100%" (click)="summarise()" [disabled]="aiBusy">{{ aiBusy ? 'Thinking…' : (ai ? 'Regenerate explanation' : '✨ Explain this case') }}</button>
-
-        <div *ngIf="ai" class="ai">
-          <p class="ai-h">{{ ai.headline }}</p>
-          <p class="ai-n">{{ ai.narrative }}</p>
-          <div class="ai-l">Why</div>
-          <ul><li *ngFor="let w of ai.whyFlagged">{{ w }}</li></ul>
-          <div class="ai-l">Uncertainty</div>
-          <div *ngFor="let u of ai.uncertaintyLabels" class="q">{{ u }}</div>
-          <div class="ai-l">Recommended checks</div>
-          <ol><li *ngFor="let r of ai.recommendedChecks">{{ r }}</li></ol>
-          <p class="muted" style="font-size:12px">{{ ai.disclaimer }}</p>
-        </div>
-      </div>
+      <div *ngIf="!share" class="skel" style="height:120px"></div>
+      <pre class="share" *ngIf="share">{{ shareTab === 'chat' ? share.chat : share.markdown }}</pre>
+    </div>
+    <div class="modal-f">
+      <span class="small good-ink" *ngIf="copied">✓ Copied {{ copied }}</span>
+      <button class="btn ghost" (click)="copy(location.origin + '/cases/' + id, 'link')">Copy link</button>
+      <button class="btn" (click)="download()" [disabled]="!share">Download .md</button>
+      <button class="btn primary" (click)="copy(shareTab === 'chat' ? share.chat : share.markdown, shareTab === 'chat' ? 'chat summary' : 'report')" [disabled]="!share">Copy</button>
     </div>
   </div>
 </div>

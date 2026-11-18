@@ -1,0 +1,194 @@
+<div class="page">
+  <div class="crumbs"><a routerLink="/rules">Rules</a> / {{ mode === 'new' ? 'New rule' : 'Propose change · ' + (existing?.name || ruleId) }}</div>
+  <div class="page-h">
+    <div class="titles">
+      <h1>{{ mode === 'new' ? 'Author a new detection rule' : 'Propose a change' }}</h1>
+      <div class="lede" *ngIf="mode === 'new'">Describe the behaviour in plain English and let the assistant map it to real tables and columns — or build it directly. Nothing goes live until a different Admin approves it.</div>
+      <div class="lede" *ngIf="mode === 'coded'">This is an engineered detector: its logic is versioned code. You can tune its parameters, severity and playbook — every change is reviewed before it runs.</div>
+      <div class="lede" *ngIf="mode === 'authored'">Edit the logic of this authored rule. The live version keeps running until your new version is approved.</div>
+    </div>
+  </div>
+
+  <div class="callout warn" *ngIf="!session.can('propose-rules')">{{ session.user.displayName }} ({{ session.user.role }}) can't propose rule changes. Switch persona to <b>Jordan Patel (Rule author)</b> or <b>Maya Chen (Admin)</b>.</div>
+
+  <div class="callout good" *ngIf="done">
+    <b>Submitted for approval as v{{ done.version }}.</b> It won't run until an Admin other than you approves it.
+    <a [routerLink]="['/rules', done.ruleId]">Open the rule →</a>
+  </div>
+
+  <div class="editor" *ngIf="!done && session.can('propose-rules')">
+    <div class="col" style="gap:16px;min-width:0">
+
+      <!-- 1. english -->
+      <section class="card step-card" *ngIf="mode !== 'coded'">
+        <div class="step-h"><span class="stepn">1</span><h2>Describe what to catch</h2>
+          <span class="ai-badge" *ngIf="draft" [class.off]="draft.source !== 'claude'">✦ {{ draft.source === 'claude' ? 'Claude' : 'Built-in parser' }} · {{ draft.confidence * 100 | number:'1.0-0' }}% sure</span></div>
+        <textarea [(ngModel)]="english" rows="3" placeholder="e.g. Flag when 4 or more accounts are created from the same device within 30 minutes using disposable emails"></textarea>
+        <div class="row wrap mt8">
+          <button class="btn primary" (click)="draftWithAi()" [disabled]="drafting || !english.trim()"><span class="spin" *ngIf="drafting"></span>✦ Draft the rule</button>
+          <span class="faint xs">or start from an example:</span>
+          <button class="chip clickable outline" *ngFor="let ex of examples" (click)="draftWithAi(ex)" [title]="ex">{{ ex.length > 46 ? ex.slice(0, 44) + '…' : ex }}</button>
+        </div>
+
+        <div *ngIf="draft" class="mt16">
+          <div class="small">{{ draft.explanation }}</div>
+          <div class="maps mt8" *ngIf="draft.fieldMappings.length">
+            <div class="map" *ngFor="let m of draft.fieldMappings"><span class="ph">“{{ m.phrase }}”</span><span class="faint">→</span><span class="mono xs">{{ m.table }}.{{ m.field }}</span><span class="faint xs">{{ m.interpretation }}</span></div>
+          </div>
+          <div class="callout warn mt12" *ngIf="draft.clarifyingQuestions.length">
+            <b>The assistant needs a few answers:</b>
+            <div class="qrow" *ngFor="let q of draft.clarifyingQuestions">
+              <div class="small">{{ q }}</div>
+              <input [(ngModel)]="answers[q]" [placeholder]="'Answer'" (keyup.enter)="draftWithAi()" />
+            </div>
+            <button class="btn sm mt8" (click)="draftWithAi()" [disabled]="drafting">Re-draft with answers</button>
+          </div>
+          <div class="callout mt12" *ngIf="draft.assumptions?.length"><b>Assumptions to confirm:</b><ul class="small" style="margin:4px 0 0;padding-left:18px"><li *ngFor="let a of draft.assumptions">{{ a }}</li></ul></div>
+        </div>
+      </section>
+
+      <!-- 2a. logic builder -->
+      <section class="card step-card" *ngIf="mode !== 'coded'">
+        <div class="step-h"><span class="stepn">2</span><h2>Detection logic</h2><span class="sub">review or edit what the assistant built</span></div>
+        <div class="sentence">{{ sentence() }}</div>
+
+        <div class="grid g2 mt16" style="gap:12px">
+          <label class="field">Signal table
+            <select [(ngModel)]="target" (ngModelChange)="onTarget()"><option *ngFor="let t of targets" [value]="t.table">{{ t.table }}</option></select>
+            <span class="hint">{{ targetInfo?.description }}</span>
+          </label>
+        </div>
+
+        <div class="section-title mt16">Only rows where ALL of these are true</div>
+        <div class="cond" *ngFor="let c of when; let i = index; trackBy: trackIdx">
+          <select [(ngModel)]="c.field"><option value="">— column —</option><option *ngFor="let f of fields" [value]="f.field">{{ f.field }} ({{ f.type }})</option></select>
+          <select [(ngModel)]="c.op" class="op"><option *ngFor="let o of ops" [value]="o">{{ opsLabel[o] }}</option></select>
+          <input *ngIf="!isList(c) && !noValue(c)" [(ngModel)]="c.value" placeholder="value" />
+          <input *ngIf="isList(c)" [(ngModel)]="c.valuesText" placeholder="comma-separated values ('' = empty)" />
+          <span *ngIf="noValue(c)" class="faint small">—</span>
+          <button class="btn ghost xs" (click)="when.splice(i, 1)" title="Remove">✕</button>
+          <div class="cond-note" *ngIf="field(c.field)?.note">{{ field(c.field).note }}</div>
+        </div>
+        <button class="btn xs" (click)="when.push(blank())">＋ Condition</button>
+
+        <div class="section-title mt16">Ignore rows where ANY of these are true<app-info k="exclusions"></app-info> <span class="faint">(allow-list / known-good)</span></div>
+        <div class="cond" *ngFor="let c of exclusions; let i = index; trackBy: trackIdx">
+          <select [(ngModel)]="c.field"><option value="">— column —</option><option *ngFor="let f of fields" [value]="f.field">{{ f.field }}</option></select>
+          <select [(ngModel)]="c.op" class="op"><option *ngFor="let o of ops" [value]="o">{{ opsLabel[o] }}</option></select>
+          <input *ngIf="!isList(c) && !noValue(c)" [(ngModel)]="c.value" placeholder="value" />
+          <input *ngIf="isList(c)" [(ngModel)]="c.valuesText" placeholder="comma-separated values" />
+          <span *ngIf="noValue(c)" class="faint small">—</span>
+          <button class="btn ghost xs" (click)="exclusions.splice(i, 1)">✕</button>
+        </div>
+        <button class="btn xs" (click)="exclusions.push(blank())">＋ Exclusion</button>
+
+        <div class="section-title mt16">When to raise a case</div>
+        <div class="seg mb12">
+          <button [class.on]="!grouped" (click)="grouped = false">Every matching row</button>
+          <button [class.on]="grouped" (click)="grouped = true">When matches pile up on one identifier</button>
+        </div>
+        <div class="grid g3" style="gap:12px" *ngIf="grouped">
+          <label class="field"><span>Group by (the shared identifier)<app-info k="groupBy"></app-info></span>
+            <select [(ngModel)]="groupBy"><option value="">—</option><option *ngFor="let f of fields" [value]="f.field">{{ f.field }}</option></select></label>
+          <label class="field"><span>Within (minutes)<app-info k="window"></app-info></span>
+            <input type="number" min="1" [(ngModel)]="windowMinutes" placeholder="blank = any time" /></label>
+          <label class="field">Measure
+            <select [(ngModel)]="aggregate"><option value="count">count of rows</option><option value="distinct">distinct values of…</option><option value="sum">sum of…</option></select></label>
+          <label class="field" *ngIf="aggregate !== 'count'">Column
+            <select [(ngModel)]="aggregateField"><option value="">—</option><option *ngFor="let f of (aggregate === 'sum' ? numericFields() : fields)" [value]="f.field">{{ f.field }}</option></select></label>
+          <label class="field"><span>Alert at or above<app-info k="threshold"></app-info></span>
+            <input type="number" min="1" [(ngModel)]="thresholdValue" /></label>
+        </div>
+
+        <div class="section-title mt16">How to value the impact</div>
+        <div class="row wrap">
+          <div class="seg">
+            <button [class.on]="impactMode === 'none'" (click)="impactMode = 'none'">Risk only (no $)</button>
+            <button [class.on]="impactMode === 'field'" (click)="impactMode = 'field'">Sum a money column</button>
+            <button [class.on]="impactMode === 'flat'" (click)="impactMode = 'flat'">Flat $ per match</button>
+          </div>
+          <select *ngIf="impactMode === 'field'" [(ngModel)]="impactField" style="width:220px"><option value="">— column —</option><option *ngFor="let f of numericFields()" [value]="f.field">{{ f.field }}</option></select>
+          <input *ngIf="impactMode === 'flat'" type="number" [(ngModel)]="impactPerMatch" placeholder="$ per match" style="width:140px" />
+        </div>
+      </section>
+
+      <!-- 2b. coded parameters -->
+      <section class="card step-card" *ngIf="mode === 'coded'">
+        <div class="step-h"><span class="stepn">1</span><h2>Parameters</h2><span class="sub">validated ranges — out-of-range values are refused</span></div>
+        <div class="param" *ngFor="let p of params">
+          <div style="flex:1;min-width:0"><b class="small">{{ p.label }}</b><div class="xs faint">{{ p.help }}</div></div>
+          <div class="pin">
+            <input *ngIf="p.type !== 'list'" type="number" [min]="p.min" [max]="p.max" [step]="p.type === 'int' ? 1 : 0.01" [(ngModel)]="paramValues[p.key]" (ngModelChange)="test = null" />
+            <input *ngIf="p.type === 'list'" [(ngModel)]="paramValues[p.key]" (ngModelChange)="test = null" placeholder="comma-separated" />
+            <span class="xs faint">{{ p.unit }}<ng-container *ngIf="p.min != null"> · {{ p.min }}–{{ p.max }}</ng-container></span>
+          </div>
+        </div>
+        <div class="faint small" *ngIf="!params.length">No tunable parameters — you can still change severity and the playbook.</div>
+      </section>
+
+      <!-- 3. context -->
+      <section class="card step-card">
+        <div class="step-h"><span class="stepn">{{ mode === 'coded' ? 2 : 3 }}</span><h2>Context &amp; response</h2><span class="sub">what a reviewer and an on-call analyst need</span></div>
+        <div class="grid g2" style="gap:12px">
+          <label class="field">Name<input [(ngModel)]="name" placeholder="Short and specific" /></label>
+          <label class="field">Category
+            <select [(ngModel)]="category"><option *ngFor="let c of ['Account','Account Takeover','Payment','Discount','Access','Security','Custom']" [value]="c">{{ c }}</option></select></label>
+        </div>
+        <div class="field mt12" style="display:flex;flex-direction:column;gap:6px">
+          <span class="small b muted">Severity<app-info k="severity"></app-info></span>
+          <div class="seg"><button *ngFor="let s of ['Low','Medium','High','Critical']" [class.on]="severity === s" (click)="severity = s">{{ s }}</button></div>
+          <span class="xs faint">Critical pages someone now (first look within 15 min); High within the hour.</span>
+        </div>
+        <label class="field mt12">Expected behaviour <span class="hint">— what normal looks like; shown on every case as “policy expects”</span>
+          <textarea [(ngModel)]="description" rows="2" placeholder="e.g. A real student creates one account on their own device."></textarea></label>
+        <label class="field mt12">Business reason <span class="hint">— what loss does this prevent?</span>
+          <textarea [(ngModel)]="rationale" rows="2" placeholder="e.g. Device farms harvest 7-day trials and resell QBank access."></textarea></label>
+        <div class="section-title mt16">Response playbook <span class="faint">(added to every case this rule raises)</span></div>
+        <div class="row mb8" *ngFor="let s of playbook; let i = index; trackBy: trackIdx">
+          <span class="stepn sm">{{ i + 1 }}</span>
+          <input [(ngModel)]="playbook[i]" placeholder="A concrete step, e.g. Hold the linked accounts and revoke trials" />
+          <button class="btn ghost xs" (click)="removeStep(i)">✕</button>
+        </div>
+        <button class="btn xs" (click)="addStep()">＋ Step</button>
+      </section>
+
+      <!-- 4. dry run -->
+      <section class="card step-card">
+        <div class="step-h"><span class="stepn">{{ mode === 'coded' ? 3 : 4 }}</span><h2>Dry-run against live data <app-info k="dryRun"></app-info></h2><span class="sub">nothing is saved — see exactly what it would raise right now</span></div>
+        <button class="btn primary" (click)="runTest()" [disabled]="testing"><span class="spin" *ngIf="testing"></span>▶ Run dry-run</button>
+        <div class="callout bad mt12" *ngIf="testError.length"><div *ngFor="let e of testError">• {{ e }}</div></div>
+        <div *ngIf="test" class="mt16">
+          <div class="row wrap">
+            <div class="tbig"><b>{{ test.matches }}</b><span>case(s) would be raised</span></div>
+            <div class="tbig" *ngIf="test.currentMatches != null"><b>{{ test.currentMatches }}</b><span>with the live settings</span></div>
+            <div class="tbig"><b>{{ test.totalImpactUsd | usd }}</b><span>total impact</span></div>
+            <div class="tbig"><b>{{ test.evaluatedMs }} ms</b><span>over {{ test.rows | number }} rows</span></div>
+          </div>
+          <div class="callout warn mt12" *ngIf="test.noise">{{ test.noise }}</div>
+          <div class="callout mt12" *ngIf="test.matches === 0">No current data matches. That can be right for a preventive rule — confirm it isn't too strict.</div>
+          <table class="t compact mt12" *ngIf="test.sample.length">
+            <thead><tr><th>Severity</th><th>Would raise</th><th class="num">Impact</th></tr></thead>
+            <tbody><tr *ngFor="let s of test.sample">
+              <td><span class="sev" [ngClass]="sevClass(s.severity)">{{ s.severity }}</span></td>
+              <td><div class="small">{{ s.title }}</div><div class="xs faint">{{ s.actual }}</div></td>
+              <td class="num small">{{ s.businessImpactUsd | usd }}</td>
+            </tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- sticky readiness -->
+    <aside class="side">
+      <section class="card">
+        <h2 class="mb12">Ready for review? <app-info k="fourEyes"></app-info></h2>
+        <div class="chk" *ngFor="let c of checks" [class.ok]="c.ok"><span>{{ c.ok ? '✓' : '○' }}</span>{{ c.label }}</div>
+        <label class="field mt12">Change note for the reviewer
+          <textarea [(ngModel)]="changeNote" rows="3" placeholder="What changed and why. e.g. Raise threshold to 4 — campus enrolment week caused 3 false positives."></textarea></label>
+        <div class="callout bad mt12" *ngIf="submitErrors.length"><div *ngFor="let e of submitErrors" class="small">• {{ e }}</div></div>
+        <button class="btn primary block mt12" (click)="submit()" [disabled]="!ready || submitting"><span class="spin" *ngIf="submitting"></span>Submit for approval</button>
+        <div class="xs faint mt8">Four-eyes: an Admin other than you must approve before this runs. You'll see it on the Rules page under “Waiting for approval”.</div>
+      </section>
+    </aside>
+  </div>
+</div>

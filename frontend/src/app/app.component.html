@@ -1,89 +1,79 @@
-<div class="topbar">
-  <div class="brand">UWorld <span>AI Trust &amp; Revenue Protection</span></div>
-  <nav>
-    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Dashboard</a>
-    <a routerLink="/cases" routerLinkActive="active">Cases</a>
-    <a routerLink="/rules" routerLinkActive="active">Rules Portal</a>
-  </nav>
-  <div class="sim">
-    <div class="dropdown">
-      <button class="btn-sim" [class.open]="menuOpen" (click)="menuOpen = !menuOpen">
-        <span class="si">⚗</span>
-        <span class="lbl">Simulate</span>
-        <span class="caret">▾</span>
-      </button>
-      <div class="menu wide" *ngIf="menuOpen">
-        <div class="menuhdr">Pick an attack family</div>
-        <div class="menuerr" *ngIf="!groups.length">{{ error || 'Loading scenarios…' }}</div>
-        <button *ngFor="let g of groups" (click)="open(g)" class="menuitem">
-          <span class="mi-ic">{{ g.icon }}</span>
-          <span class="mi-txt"><span class="ml">{{ g.label }}</span><span class="mt">{{ g.variants.length }} bypass variants</span></span>
-          <span class="mi-go">›</span>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+<ng-container *ngIf="!bare; else bareTpl">
+  <div class="shell">
+    <aside class="shell-side">
+      <a class="brand" routerLink="/">
+        <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+          <path d="M16 2.5 4.5 7v8.2c0 7.2 4.9 12.5 11.5 14.3 6.6-1.8 11.5-7.1 11.5-14.3V7z" fill="var(--accent)" />
+          <path d="M10.5 16.2l3.6 3.6 7.6-7.8" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span><b>Sentinel</b><small>Trust &amp; Revenue Protection</small></span>
+      </a>
 
-<!-- simulate popup -->
-<div class="modal-back" *ngIf="group" (click)="close()">
-  <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-    <div class="m-head">
-      <div>
-        <div class="m-title">{{ group.icon }} {{ group.label }}</div>
-        <div class="m-sub">{{ group.summary }} Detected by <span class="chip">{{ group.ruleId }}</span></div>
-      </div>
-      <button class="m-x" (click)="close()" [disabled]="busy" aria-label="Close">✕</button>
-    </div>
-
-    <div class="m-body">
-      <div class="m-list">
-        <div class="m-label">Bypass variants</div>
-        <button *ngFor="let v of group.variants; let i = index" class="vopt" [class.sel]="v === variant"
-                (click)="variant = v" [disabled]="busy">
-          <span class="vnum">{{ i + 1 }}</span>
-          <span><span class="vl">{{ v.label }}</span><span class="vt">{{ v.technique }}</span></span>
-        </button>
-      </div>
-
-      <div class="m-detail" *ngIf="variant">
-        <div class="m-label">What this simulation does</div>
-        <h3 class="vd-title">{{ variant.label }}</h3>
-        <div class="vd-tech">Technique: {{ variant.technique }}</div>
-        <p class="vd-desc">{{ variant.detail }}</p>
-        <div class="vd-grid">
-          <div><b>Writes to</b><span class="mono">{{ variant.tables }}</span></div>
-          <div><b>Then</b>Runs one detection pass over all rules</div>
-          <div><b>Expected result</b>{{ variant.expect }}</div>
-        </div>
-        <div class="row" style="margin-top:14px">
-          <button class="btn" (click)="run(variant)" [disabled]="busy">{{ busy ? 'Running…' : '▶ Run this simulation' }}</button>
-          <button class="btn ghost" (click)="runAll()" [disabled]="busy">Run all {{ group.variants.length }} variants</button>
-        </div>
-        <div class="q" *ngIf="error" style="margin-top:10px">{{ error }}</div>
-      </div>
-    </div>
-
-    <div class="m-results" *ngIf="runs.length">
-      <div class="m-label">Results</div>
-      <div class="res" *ngFor="let r of runs">
-        <div class="res-h">
-          <b>{{ r.variant.label }}</b>
-          <span class="res-n" [class.zero]="!r.result.casesCreated">{{ r.result.casesCreated }} new case(s)</span>
-        </div>
-        <details>
-          <summary>Rows injected ({{ r.result.injected.length }})</summary>
-          <div class="mono inj" *ngFor="let line of r.result.injected">{{ line }}</div>
-        </details>
-        <a *ngFor="let c of r.result.newCases" class="res-case" [routerLink]="['/cases', c.caseId]" (click)="close()">
-          <span class="sev {{ c.severity | lowercase }}">{{ c.severity }}</span>
-          #{{ c.caseId }} {{ c.title }} <span class="go">Open →</span>
+      <nav>
+        <a routerLink="/" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: true }">
+          <span class="ni">◎</span>Command center
+          <span class="nb crit" *ngIf="counts.critical" title="Open critical cases">{{ counts.critical }}</span>
         </a>
+        <a routerLink="/cases" routerLinkActive="on">
+          <span class="ni">▤</span>Cases
+          <span class="nb" *ngIf="counts.open" [title]="counts.unack + ' not yet acknowledged'">{{ counts.open }}</span>
+        </a>
+        <a routerLink="/rules" routerLinkActive="on">
+          <span class="ni">⚖</span>Rules
+          <span class="nb warn" *ngIf="counts.pending" title="Changes awaiting approval">{{ counts.pending }}</span>
+        </a>
+        <a routerLink="/lab" routerLinkActive="on"><span class="ni">⚗</span>Simulation lab</a>
+        <div class="nav-sep"></div>
+        <button class="navbtn" (click)="openStore()" title="Opens the simulated customer storefront in a new window"><span class="ni">↗</span>Customer storefront</button>
+      </nav>
+
+      <div class="side-foot">
+        <div class="st-row" [title]="(live.connected$ | async) ? 'Streaming live events from the detection engine' : 'Reconnecting to the live stream…'">
+          <span class="pulse-dot" [class.off]="!(live.connected$ | async)"></span>
+          <span>{{ (live.connected$ | async) ? 'Live' : 'Reconnecting…' }}</span>
+        </div>
+        <div class="st-row" [title]="ai?.detail">
+          <span class="ai-badge" [class.off]="!ai?.live">✦ {{ ai?.live ? 'Claude' : 'AI fallback' }}</span>
+          <span class="faint xs ellipsis">{{ ai?.live ? ai.model : 'deterministic' }}</span>
+        </div>
+        <div class="row">
+          <button class="btn ghost xs" (click)="toggleTheme()">{{ theme === 'dark' ? '☀ Light' : '☾ Dark' }}</button>
+          <button class="btn ghost xs" (click)="live.toggleSound()" [title]="'Alert chime ' + (live.sound ? 'on' : 'off')">{{ live.sound ? '🔔 Sound' : '🔕 Muted' }}</button>
+        </div>
       </div>
+    </aside>
+
+    <div class="shell-main">
+      <header class="shell-top">
+        <form class="search topsearch" (ngSubmit)="search()">
+          <input id="global-search" name="q" [(ngModel)]="q" placeholder="Search cases, IPs, emails, devices…   ( / )" autocomplete="off" />
+        </form>
+        <div class="spacer"></div>
+        <div class="persona" (click)="menu = !menu" [class.open]="menu">
+          <span class="av" [attr.data-role]="session.user.role">{{ session.user.initials }}</span>
+          <span class="who"><b>{{ session.user.displayName }}</b><small>{{ session.user.role === 'RuleAuthor' ? 'Rule author' : session.user.role }} · {{ session.user.title }}</small></span>
+          <span class="caret">▾</span>
+          <div class="pmenu" *ngIf="menu" (click)="$event.stopPropagation()">
+            <div class="section-title">Act as (demo of role-based access)</div>
+            <button *ngFor="let p of session.people" (click)="switchUser(p.username)" [class.on]="p.username === session.user.username">
+              <span class="av sm" [attr.data-role]="p.role">{{ p.initials }}</span>
+              <span><b>{{ p.displayName }}</b> <span class="chip xs">{{ p.role === 'RuleAuthor' ? 'Rule author' : p.role }}</span><small>{{ roleHelp(p.role) }}</small></span>
+            </button>
+          </div>
+        </div>
+      </header>
+      <main><router-outlet></router-outlet></main>
+    </div>
+  </div>
+</ng-container>
+<ng-template #bareTpl><router-outlet></router-outlet></ng-template>
+
+<div class="toasts" aria-live="polite" *ngIf="!bare">
+  <div class="toast" *ngFor="let t of live.toasts$ | async" [ngClass]="t.level" (click)="t.link && $any(router).navigate(t.link); live.dismiss(t.id)">
+    <div style="font-size:18px">{{ t.icon }}</div>
+    <div style="min-width:0">
+      <div class="tt">{{ t.title }}</div>
+      <div class="td" *ngIf="t.detail">{{ t.detail }}</div>
     </div>
   </div>
 </div>
-
-<main>
-  <router-outlet></router-outlet>
-</main>

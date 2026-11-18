@@ -1,0 +1,73 @@
+/** Plain-English definitions for every term the UI uses that a non-specialist might not know. */
+export const GLOSSARY: { [key: string]: { term: string; text: string } } = {
+  // posture & KPIs
+  posture: { term: 'Threat posture', text: 'One-word summary of open risk: Critical if any critical case is open, Elevated for high-severity cases, Guarded for lower ones, Calm when nothing is open.' },
+  atRisk: { term: 'Revenue at risk', text: 'Sum of the estimated $ impact of all open cases — money that is exposed until someone acts (free access granted, unpaid orders, discounts given away).' },
+  protected: { term: 'Protected revenue', text: 'Impact of cases an analyst confirmed as fraud in the last 30 days — the value the team actually stopped.' },
+  ttd: { term: 'Time to detect', text: 'How long after the attacker\'s action the case appeared. Measured from the event that pushed the score over the alert line to the moment the case was created.' },
+  tta: { term: 'Time to first look', text: 'How long a case waited before an analyst acknowledged it. The SLA is 15 min for critical, 60 min for high.' },
+  precision: { term: 'Precision', text: 'Of the cases analysts gave a verdict on, the share that were real fraud. High precision means analysts aren\'t wasting time on false alarms.' },
+  queue: { term: 'Priority ranking', text: 'Open cases ordered by severity first, then whether anyone has looked at them, then $ impact and age.' },
+  emerging: { term: 'Building, not yet alerting', text: 'Clusters of linked accounts or login failures that are scored but still below the alert line. They become cases automatically if they keep growing.' },
+  hotspots: { term: 'Repeat identifiers', text: 'IP addresses, devices, payment cards or email domains that appear in open cases — often the same actor behind several incidents.' },
+  // case
+  severity: { term: 'Severity', text: 'Urgency. Critical: real money or content is leaking now. High: strong evidence of abuse. Medium: suspicious, needs review. Low: informational.' },
+  score: { term: 'Risk score', text: '0–100, the sum of the weighted signals listed below it. Each signal is independent evidence; more independent signals means a higher score.' },
+  confidence: { term: 'Confidence', text: 'How sure the rule is that this is abuse rather than a coincidence. It rises with the number of independent signals.' },
+  alertLine: { term: 'Alert line', text: 'The score at which a case is raised (a rule parameter, governed in the Rules portal). Below it the activity is only watched.' },
+  attackWindow: { term: 'Attack window', text: 'Time between the first and the last event in this case\'s evidence — how long the activity lasted.' },
+  latency: { term: 'Detection latency', text: 'Time from the triggering customer request to the case being created. Sentinel evaluates every event as it happens.' },
+  backfill: { term: 'Backfill', text: 'Found by the periodic sweep over historical data rather than in real time (e.g. seeded or imported data).' },
+  impact: { term: 'Business impact', text: 'Dollar estimate computed from the actual records, with the formula shown — e.g. list price of trials taken minus what was collected.' },
+  playbook: { term: 'Response playbook', text: 'Concrete containment steps for this case. Sentinel never acts on its own; analysts carry steps out in the owning systems and mark them done here for the audit trail.' },
+  copilot: { term: 'Investigation copilot', text: 'AI that explains the case from its recorded facts only. Emails and IPs are masked and customer-written text is screened for prompt injection first. It can\'t change anything.' },
+  verdict: { term: 'Verdict', text: 'Analyst\'s conclusion: Confirmed fraud, False positive (the rule was wrong) or Benign (real but allowed). Verdicts drive each rule\'s precision.' },
+  linkGraph: { term: 'Link graph', text: 'Accounts (circles) connected to the identifiers they share — IP, device, card, email template. Shared identifiers are what tie separate accounts to one actor.' },
+  reputation: { term: 'Identifier reputation', text: 'History of each IP / device / card across all accounts and cases: how many accounts use it, failed logins, and whether it appears in other cases or a block list.' },
+  acknowledged: { term: 'Acknowledged', text: 'An analyst has opened and taken note of the case. Unacknowledged critical cases older than 15 minutes are flagged overdue.' },
+  related: { term: 'Related cases', text: 'Other cases that share at least one identifier (IP, device, card, account, email) with this one.' },
+  // signals
+  SharedNetwork: { term: 'Shared registration IP', text: 'Several new accounts were created from the same public IP close together. Weak on its own — campuses, offices and mobile carriers share IPs — so it never raises a case alone.' },
+  SharedDevice: { term: 'Same device', text: 'The accounts were created on the same browser/device fingerprint. Real students rarely register several accounts on one device.' },
+  SharedCard: { term: 'Same payment card', text: 'One card (identified by a fingerprint, never the number) paid for several different accounts.' },
+  TemplatedEmails: { term: 'Templated emails', text: 'Email addresses follow one pattern with a changing number (jake.miller01, jake.miller02…) — typical of scripts.' },
+  SameInbox: { term: 'One inbox, many aliases', text: 'Addresses like john+1@gmail.com and j.o.h.n@gmail.com all deliver to one mailbox.' },
+  DisposableEmail: { term: 'Disposable email', text: 'Throwaway inbox services (mailinator, yopmail…) used to create accounts without a real identity.' },
+  GeneratedEmails: { term: 'Machine-generated emails', text: 'Random-looking addresses (e.g. xk3j9q2zt7@) produced by a script.' },
+  AutomationClient: { term: 'Scripted client', text: 'Requests came from a program (python-requests, curl, headless browser) rather than a normal browser or the app.' },
+  ScriptedCadence: { term: 'Inhuman signup speed', text: 'Accounts were created faster than a person can fill a signup form.' },
+  TrialHarvest: { term: 'Trial / discount harvesting', text: 'The linked accounts took free trials or discounts — each extra account is free access that should have been paid for.' },
+  FailedLoginBurst: { term: 'Failed-login burst', text: 'Many failed logins from one source in a short window.' },
+  AccountSpread: { term: 'Many accounts targeted', text: 'The failures were against many different accounts — a leaked password list being tried, not one person forgetting their password.' },
+  SuccessfulTakeover: { term: 'Successful takeover', text: 'A login from the attacking source succeeded during the burst — that account is probably compromised.' },
+  AuthResult: { term: 'Authorization result', text: 'What the access check decided (Allowed / Denied / Missing) for this request.' },
+  ContentReturnedBytes: { term: 'Content returned', text: 'How much protected content actually left the platform for this request. After a deny it must be 0.' },
+  // attacks
+  accountFarm: { term: 'Account farm', text: 'One person or bot creating many accounts to collect free trials, discounts or resell access.' },
+  credentialStuffing: { term: 'Credential stuffing', text: 'Replaying email/password pairs leaked from other websites against our login, hoping people reused passwords.' },
+  authGap: { term: 'Authorization gap', text: 'The access check said "no", but some endpoint (export, cache) delivered the protected content anyway.' },
+  scraping: { term: 'Content scraping', text: 'Automated bulk reading of the question bank, usually to copy and resell it.' },
+  couponAbuse: { term: 'Coupon abuse', text: 'Using discount codes beyond their rules: reusing a one-time code, exceeding its limit, or applying it to products it isn\'t valid for.' },
+  // rules
+  engineered: { term: 'Engineered rule', text: 'Detection logic written and versioned in code by engineers. Analysts tune its parameters, severity and playbook here.' },
+  authored: { term: 'Authored rule', text: 'Detection logic defined entirely in this portal (by plain English + the builder). Runs without a code deploy once approved.' },
+  fourEyes: { term: 'Four-eyes approval', text: 'Every rule change needs a second person: the author can propose, but only a different Admin can approve and make it live.' },
+  dryRun: { term: 'Dry-run', text: 'Runs the proposed rule against today\'s real data without saving anything, so you see exactly which cases it would raise.' },
+  groupBy: { term: 'Group by', text: 'The shared identifier to count on — e.g. group by DeviceFingerprint to count accounts per device.' },
+  window: { term: 'Window', text: 'Only events this close together count toward the threshold (a sliding time window).' },
+  threshold: { term: 'Threshold', text: 'The count (or sum) at which a case is raised.' },
+  exclusions: { term: 'Exclusions', text: 'Known-good traffic to ignore (an allow-list), e.g. a partner university\'s email domain.' },
+  ruleLive: { term: 'Live', text: 'Approved and enabled — it evaluates every new event.' },
+  version: { term: 'Version', text: 'Every approved change creates a new version; the full history of proposals, approvals and rejections is kept.' },
+  // simulation
+  sharedMachine: { term: 'Shared machine', text: 'All storefront windows present the same IP and device, like tabs on one laptop. "Be someone else" gives one window its own identity.' },
+  ip: { term: 'IP address', text: 'The public network address the request came from (simulated here so one laptop can act as many people).' },
+  device: { term: 'Device fingerprint', text: 'A stable identifier of the browser/device, derived from its characteristics — the same machine gives the same fingerprint.' },
+  scriptClient: { term: 'Script client', text: 'Sends requests as an automation tool (python-requests) instead of a browser — what a bot would look like.' },
+  verdictClean: { term: 'Engine verdict', text: 'Clean: nothing suspicious. Watching: risk is building but below the alert line. Alert: a case was raised or grew.' },
+  dataInjection: { term: 'Data-level injection', text: 'Writes anomalies straight into the source tables, as a back-office bug or an insider would — no customer request involved.' },
+};
+
+export function glossaryLookup(key: string): { term: string; text: string } | null {
+  return GLOSSARY[key] || null;
+}

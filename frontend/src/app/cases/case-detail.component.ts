@@ -1,96 +1,148 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ApiService } from '../api.service';
-import { impactExplain, ImpactInfo } from '../impact';
+import { Subject } from 'rxjs';
+import { debounceTime, filter, takeUntil } from 'rxjs/operators';
+import { ApiService } from '../core/api.service';
+import { LiveService } from '../core/live.service';
+import { SessionService } from '../core/session.service';
+import { factorLabel, sevClass, utc } from '../core/format';
+
+type Tab = 'graph' | 'accounts' | 'timeline' | 'evidence' | 'related' | 'activity';
 
 @Component({
   selector: 'app-case-detail',
-  templateUrl: './case-detail.component.html'
+  templateUrl: './case-detail.component.html',
+  styleUrls: ['./case-detail.component.css']
 })
-export class CaseDetailComponent implements OnInit {
+export class CaseDetailComponent implements OnInit, OnDestroy {
   id = 0;
-  case: any;
-  ai: any;
-  aiBusy = false;
-  showImpact = false;
+  d: any = null;          // dossier
+  c: any = null;          // case
+  error = '';
+  tab: Tab = 'graph';
+  busy = '';
+  flash = '';
+  summary: any = null;
+  summaryBusy = false;
+  question = '';
+  answers: { q: string; a: any }[] = [];
+  asking = false;
+  comment = '';
+  timelineFilter = 'all';
 
-  get impact(): ImpactInfo { return impactExplain(this.case ? this.case.ruleId : ''); }
+  modal: '' | 'verdict' | 'escalate' | 'share' = '';
+  verdict = 'ConfirmedFraud';
+  verdictNotes = '';
+  resolve = true;
+  escalateNotes = '';
+  share: any = null;
+  redact = false;
+  shareTab: 'md' | 'chat' = 'chat';
+  copied = '';
 
-  /** "Actual" is built as "main sentence  · subscription …  · applied from …" — split it into readable facts. */
-  get actualParts(): string[] {
-    return this.case && this.case.actual ? this.case.actual.split(/\s{2}·\s/).map((s: string) => s.trim()).filter((s: string) => s) : [];
-  }
+  sevClass = sevClass; factorLabel = factorLabel; location = location;
+  private destroy$ = new Subject<void>();
 
-  /** Evidence in time order; undated rows keep their original order at the end. */
-  get timeline(): any[] {
-    if (!this.case) { return []; }
-    const dated = this.case.evidence.filter((e: any) => e.occurredUtc)
-      .sort((a: any, b: any) => a.occurredUtc.localeCompare(b.occurredUtc));
-    return dated.concat(this.case.evidence.filter((e: any) => !e.occurredUtc));
-  }
-
-  get maxWeight(): number {
-    return this.case && this.case.scoreBreakdown.length ? Math.max(...this.case.scoreBreakdown.map((f: any) => f.weight)) : 1;
-  }
-
-  // ---- Dev info (collapsed, inside the case) ----
-  private readonly ruleFiles: { [k: string]: string } = {
-    'authorization-gap': 'backend/.../Detection/Rules/AuthorizationGapRule.cs',
-    'entitlement-leakage': 'backend/.../Detection/Rules/EntitlementLeakageRule.cs',
-    'revenue-abuse': 'backend/.../Detection/Rules/RevenueDiscountAbuseRule.cs',
-    'content-scraping': 'backend/.../Detection/Rules/ContentScrapingRule.cs',
-    'coordinated-account': 'backend/.../Detection/Rules/CoordinatedAccountRule.cs',
-    'cve-exposure': 'backend/.../Detection/Rules/CveExposureRule.cs',
-    'paid-without-braintree': 'backend/.../Detection/Rules/PaidWithoutBraintreeRule.cs',
-    'discount-code-fraud': 'backend/.../Detection/Rules/DiscountCodeFraudRule.cs',
-    'same-subscription-region': 'backend/.../Detection/Rules/SameSubscriptionDifferentRegionRule.cs',
-    'blocked-ip-embargo': 'backend/.../Detection/Rules/BlockedIpEmbargoRule.cs'
-  };
-  copied = false;
-
-  get sourceFile(): string {
-    const r = this.case ? this.case.ruleId : '';
-    return this.ruleFiles[r] || (r && r.indexOf('nl-') === 0
-      ? 'backend/.../Detection/DeclarativeRuleEvaluator.cs (NL-authored rule)' : '—');
-  }
-
-  get rawJson(): string { return this.case ? JSON.stringify(this.case, null, 2) : ''; }
-
-  dev: any[] = [];
-  get devReq(): any { return this.dev && this.dev.length ? this.dev[0] : null; }
-
-  pretty(text: string | null): string {
-    if (!text) { return '(empty)'; }
-    try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text; }
-  }
-
-  copyJson(): void {
-    navigator.clipboard.writeText(this.rawJson).then(() => { this.copied = true; setTimeout(() => this.copied = false, 1500); });
-  }
-
-  constructor(private route: ActivatedRoute, private api: ApiService) {}
+  constructor(private route: ActivatedRoute, private api: ApiService, private live: LiveService, public session: SessionService) {}
 
   ngOnInit(): void {
-    // re-load when navigating between cases (e.g. from the simulate popup)
-    this.route.paramMap.subscribe(p => {
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(p => {
       this.id = +(p.get('id') || 0);
-      this.ai = null; this.showImpact = false;
+      this.d = null; this.summary = null; this.answers = []; this.tab = 'graph';
       this.load();
+      this.api.cachedSummary(this.id).subscribe(s => this.summary = s || null, () => {});
     });
+    this.live.events$.pipe(filter(e => e.caseId === this.id && e.type !== 'case-status'), debounceTime(300), takeUntil(this.destroy$))
+      .subscribe(e => { this.flashMsg(e.type === 'case-updated' ? 'This case just grew: ' + (e.detail || '') : e.title); this.load(); });
   }
 
   load(): void {
-    this.api.case(this.id).subscribe(c => this.case = c);
-    this.dev = [];
-    this.api.caseDev(this.id).subscribe(d => this.dev = d || [], () => this.dev = []);
+    this.api.investigation(this.id).subscribe(d => {
+      this.d = d; this.c = d.case; this.error = '';
+      if (!d.nodes.length && this.tab === 'graph') { this.tab = d.accounts.length ? 'accounts' : 'timeline'; }
+    }, e => this.error = e.status === 404 ? `Case #${this.id} doesn't exist.` : 'Could not load this case — is the API running?');
   }
 
-  summarise(): void {
-    this.aiBusy = true;
-    this.api.aiSummary(this.id).subscribe(a => { this.ai = a; this.aiBusy = false; }, () => this.aiBusy = false);
-  }
+  get canWork(): boolean { return this.session.can('work-cases'); }
+  get open(): boolean { return this.c && this.c.status !== 'Resolved'; }
 
-  assign(): void { this.api.assign(this.id, 'kuladeep').subscribe(() => this.load()); }
-  escalate(): void { this.api.escalate(this.id, 'Escalated from workspace').subscribe(() => this.load()); }
-  resolve(): void { this.api.resolve(this.id, 'Reviewed and resolved').subscribe(() => this.load()); }
+  // ---- actions ----
+  private act(label: string, obs: any, done?: () => void): void {
+    this.busy = label;
+    obs.subscribe((c: any) => { this.busy = ''; this.load(); if (done) { done(); } },
+      (e: any) => { this.busy = ''; this.flashMsg(e.error?.error || 'Action failed'); });
+  }
+  acknowledge(): void { this.act('ack', this.api.acknowledge(this.id)); }
+  assignMe(): void { this.act('assign', this.api.assign(this.id, this.session.user.username)); }
+  doEscalate(): void { this.act('escalate', this.api.escalate(this.id, this.escalateNotes), () => { this.modal = ''; this.escalateNotes = ''; }); }
+  doVerdict(): void {
+    this.act('verdict', this.api.disposition(this.id, this.verdict, this.verdictNotes, this.resolve), () => { this.modal = ''; this.verdictNotes = ''; });
+  }
+  reopen(): void { this.act('reopen', this.api.reopen(this.id, 'Reopened for further review')); }
+  addComment(): void {
+    const t = this.comment.trim(); if (!t) { return; }
+    this.act('comment', this.api.comment(this.id, t), () => this.comment = '');
+  }
+  markStep(step: string): void { this.act('step:' + step, this.api.action(this.id, step)); }
+  stepDone(step: string): any { return this.c?.activity?.find((a: any) => a.action === 'ActionTaken' && a.notes === step); }
+  get stepsDone(): number { return (this.c?.playbook || []).filter((s: string) => this.stepDone(s)).length; }
+
+  // ---- copilot ----
+  generateSummary(): void {
+    this.summaryBusy = true;
+    this.api.aiSummary(this.id).subscribe(s => { this.summary = s; this.summaryBusy = false; this.load(); }, () => this.summaryBusy = false);
+  }
+  ask(q?: string): void {
+    const question = (q || this.question).trim(); if (!question) { return; }
+    this.asking = true; this.question = '';
+    this.api.ask(this.id, question).subscribe(a => { this.answers.unshift({ q: question, a }); this.asking = false; },
+      () => { this.answers.unshift({ q: question, a: { answer: 'The copilot could not answer right now.', supportingFacts: [] } }); this.asking = false; });
+  }
+  get suggestions(): string[] {
+    if (!this.c) { return []; }
+    if (this.c.ruleId === 'account-farm') { return ['How fast were these accounts created?', 'Which device created these accounts?', 'Have any of them paid?']; }
+    if (this.c.ruleId === 'credential-stuffing') { return ['Which accounts were breached?', 'How many accounts were targeted?', 'What client did the attacker use?']; }
+    return ['What exactly happened?', 'What is the revenue impact?', 'Is this linked to other cases?'];
+  }
+  verdictLabel(v: string): string { return ({ 'likely-fraud': 'Likely fraud', 'needs-review': 'Needs review', 'likely-benign': 'Likely benign' } as any)[v] || v; }
+
+  // ---- share ----
+  openShare(): void { this.modal = 'share'; this.loadShare(); }
+  loadShare(): void {
+    this.share = null;
+    this.api.report(this.id, this.redact, location.origin + '/cases/' + this.id).subscribe(r => this.share = r);
+  }
+  copy(text: string, what: string): void {
+    navigator.clipboard.writeText(text).then(() => { this.copied = what; setTimeout(() => this.copied = '', 1800); });
+  }
+  download(): void {
+    const blob = new Blob([this.share.markdown], { type: 'text/markdown' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `case-${this.id}${this.redact ? '-redacted' : ''}.md`; a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  print(): void { window.print(); }
+
+  // ---- helpers ----
+  get timeline(): any[] {
+    const t = this.d?.timeline || [];
+    if (this.timelineFilter === 'key') { return t.filter((x: any) => x.highlight); }
+    if (this.timelineFilter === 'human') { return t.filter((x: any) => x.kind === 'activity' || x.kind === 'detected'); }
+    return t;
+  }
+  span(): string {
+    if (!this.c?.firstSignalUtc || !this.c?.triggerSignalUtc) { return ''; }
+    const s = (utc(this.c.triggerSignalUtc)!.getTime() - utc(this.c.firstSignalUtc)!.getTime()) / 1000;
+    return s < 90 ? `${Math.max(1, Math.round(s))}s` : s < 5400 ? `${Math.round(s / 60)} min` : `${(s / 3600).toFixed(1)} h`;
+  }
+  maxWeight(): number { return Math.max(1, ...(this.c?.scoreBreakdown || []).map((f: any) => f.weight)); }
+  kindIcon(k: string): string {
+    return ({ signup: '👤', subscription: '🎟', payment: '💳', login: '🔑', 'login-failed': '✕', api: '↔', evidence: '◆', detected: '🚨', activity: '✎' } as any)[k] || '•';
+  }
+  activityIcon(a: string): string {
+    return ({ Created: '🚨', Updated: '📈', Reopened: '↺', Acknowledged: '👁', Assigned: '👤', Escalated: '⏫', Comment: '💬', ActionTaken: '✓', Resolved: '✔', Disposition: '⚖', AiSummary: '✦', Shared: '↗' } as any)[a] || '•';
+  }
+  repIcon(t: string): string { return ({ ip: '🌐', device: '💻', card: '💳', domain: '@' } as any)[t] || '•'; }
+  flashMsg(m: string): void { this.flash = m; setTimeout(() => { if (this.flash === m) { this.flash = ''; } }, 6000); }
+
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

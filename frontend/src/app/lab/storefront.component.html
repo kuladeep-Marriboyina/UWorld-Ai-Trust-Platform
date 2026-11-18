@@ -1,0 +1,231 @@
+<div class="sf">
+  <!-- presenter strip: identity this window presents to the server -->
+  <div class="strip">
+    <div class="strip-row">
+      <b class="tagline">🧪 Simulation · {{ windowName }}</b>
+      <button class="sbtn hero-btn" (click)="openPicker()" [disabled]="!!auto">🎬 Demo scenarios</button>
+      <span class="idc" [class.glow]="focus === 'identity'">🌐 <span class="mono">{{ identity.ip }}</span><app-info k="ip"></app-info></span>
+      <span class="idc" [class.glow]="focus === 'identity'">💻 <span class="mono">{{ identity.device }}</span><app-info k="device"></app-info></span>
+      <select class="cc" [ngModel]="identity.country" (ngModelChange)="setCountry($event)" [disabled]="!!auto">
+        <option *ngFor="let c of ['US','IN','GB','CA','NG','PH','NL','IR']" [value]="c">{{ c }}</option>
+      </select>
+      <span class="who" [class.other]="isOverride" *ngIf="!auto">{{ isOverride ? 'A different person (this window only)' : 'Same machine as other windows' }}<app-info k="sharedMachine"></app-info></span>
+      <span class="who other" *ngIf="auto">Acting as: {{ auto.who }}</span>
+      <span class="spacer"></span>
+      <ng-container *ngIf="stripOpen && !auto">
+        <button class="sbtn" *ngIf="!isOverride" (click)="beSomeoneElse()" title="Fresh IP + device for this window only">👤 Be someone else</button>
+        <button class="sbtn" *ngIf="isOverride" (click)="backToShared()">↩ Back to shared machine</button>
+        <button class="sbtn" (click)="newSharedMachine()" title="New IP + device shared by all windows">↻ New machine</button>
+        <label class="sbtn chk"><input type="checkbox" [(ngModel)]="bot" /> Script client <app-info k="scriptClient"></app-info></label>
+        <button class="sbtn" (click)="togglePresenter()">{{ presenter ? 'Hide' : 'Show' }} trust engine</button>
+      </ng-container>
+      <span class="sbtn chk" *ngIf="auto && bot">🤖 script client</span>
+      <button class="sbtn" (click)="stripOpen = !stripOpen" *ngIf="!auto">{{ stripOpen ? '▴' : '▾' }}</button>
+    </div>
+  </div>
+
+  <!-- narration bar while a scenario plays -->
+  <div class="narr" *ngIf="auto" [class.done]="auto.finished">
+    <div class="narr-main">
+      <span class="narr-ic">{{ auto.s.icon }}</span>
+      <div style="flex:1;min-width:0">
+        <div class="narr-title">{{ auto.s.title }} <span class="kind" [class.legit]="auto.s.kind === 'legit'">{{ auto.s.kind === 'attack' ? 'attack' : 'legitimate' }}</span></div>
+        <div class="narr-cap">{{ auto.finished ? (auto.stopped ? 'Stopped.' : 'Finished.') : auto.caption }}</div>
+        <div class="narr-det" *ngIf="auto.detail && !auto.finished">{{ auto.detail }}</div>
+      </div>
+      <div class="narr-ctl" *ngIf="!auto.finished">
+        <div class="pace">
+          <button [class.on]="speed === 'slow'" (click)="speed = 'slow'">Slow</button>
+          <button [class.on]="speed === 'normal'" (click)="speed = 'normal'">Normal</button>
+          <button [class.on]="speed === 'fast'" (click)="speed = 'fast'">Fast</button>
+        </div>
+        <button class="sbtn" (click)="paused = !paused">{{ paused ? '▶ Resume' : '⏸ Pause' }}</button>
+        <button class="sbtn" (click)="stop()">■ Stop</button>
+      </div>
+      <button class="sbtn" *ngIf="auto.finished" (click)="closeAuto()">Close</button>
+    </div>
+    <div class="narr-prog" *ngIf="auto.total"><i [style.width.%]="100 * auto.done / auto.total"></i><span>{{ auto.done }} / {{ auto.total }} {{ auto.unit }}</span></div>
+    <div class="narr-out" *ngIf="auto.finished">
+      <ng-container *ngIf="auto.cases.length; else cleanRun">
+        <div class="oc bad" *ngFor="let c of auto.cases" (click)="openConsole(c.caseId)">🚨 <b>Case #{{ c.caseId }} · {{ c.severity }} · score {{ c.score | number:'1.0-0' }}</b> — {{ c.title }} <span class="xs">open in console ↗</span></div>
+      </ng-container>
+      <ng-template #cleanRun><div class="oc good">✓ <b>No case raised.</b> {{ auto.s.kind === 'legit' ? 'Real customers passed through untouched — exactly right.' : 'Nothing crossed the alert line.' }}</div></ng-template>
+      <div class="xs" style="margin-top:6px">Expected: {{ auto.s.expect }}</div>
+    </div>
+  </div>
+
+  <div class="layout" [class.with-panel]="presenter">
+    <div class="store">
+      <div class="uw-util">
+        <span>Medical</span><span>Nursing</span><span>Accounting</span><span>Legal</span><span>College Readiness</span>
+        <span class="spacer"></span><span>Help center</span><span>Contact us</span>
+      </div>
+      <header class="brandbar">
+        <a class="logo" (click)="view = 'signup'" title="UWorld">
+          <img *ngIf="logoOk" src="assets/uworld-logo.svg" alt="UWorld" (error)="logoOk = false" />
+          <span *ngIf="!logoOk" class="wordmark"><span class="wm-u">U</span>World</span>
+        </a>
+        <nav class="prod">
+          <a>USMLE</a><a>NCLEX</a><a>CPA</a><a>MCAT</a>
+        </nav>
+        <nav>
+          <a (click)="view = 'login'; error = ''" [class.on]="view === 'login'">Log in</a>
+          <a *ngIf="user" (click)="view = 'study'; error = ''" [class.on]="view === 'study'">My QBank</a>
+          <a class="nav-cta" (click)="view = 'signup'; error = ''" [class.on]="view === 'signup'">Start free trial</a>
+        </nav>
+      </header>
+
+      <section class="hero" *ngIf="view === 'signup' || view === 'login'">
+        <div class="hero-txt">
+          <div class="eyebrow">QBank · Practice exams · Explanations</div>
+          <h1>Study smarter for your boards.</h1>
+          <p>Exam-like questions with in-depth explanations and performance analytics. Try any QBank free for 7 days — no card needed.</p>
+          <ul class="ticks"><li>Questions modelled on the real exam</li><li>Detailed, illustrated explanations</li><li>Track your performance against peers</li></ul>
+        </div>
+      <div class="panel" *ngIf="view === 'signup'">
+        <h2>Create your account</h2>
+        <div class="fills" *ngIf="!auto">
+          <span>Quick fill:</span>
+          <button (click)="fillReal()" type="button">🎓 A real student</button>
+          <button (click)="fillPattern()" type="button">🤖 Next farm account</button>
+        </div>
+        <form (ngSubmit)="signup()" class="frm">
+          <div class="two">
+            <label>First name<input name="fn" [(ngModel)]="form.firstName" [class.glow]="focus === 'fn'" required /></label>
+            <label>Last name<input name="ln" [(ngModel)]="form.lastName" [class.glow]="focus === 'ln'" required /></label>
+          </div>
+          <label>Email<input name="em" type="email" [(ngModel)]="form.email" [class.glow]="focus === 'em'" required /></label>
+          <label>Password<input name="pw" type="text" [(ngModel)]="form.password" [class.glow]="focus === 'pw'" required /></label>
+          <div class="err" *ngIf="error">{{ error }}</div>
+          <button class="cta" type="submit" [disabled]="busy" [class.pressed]="focus === 'create'">{{ busy ? 'Creating…' : 'Create account' }}</button>
+        </form>
+      </div>
+
+      <div class="panel" *ngIf="view === 'login'">
+        <h2>Welcome back</h2>
+        <form (ngSubmit)="login()" class="frm">
+          <label>Email<input name="lem" [(ngModel)]="loginForm.email" [class.glow]="focus === 'lem'" /></label>
+          <label>Password<input name="lpw" type="text" [(ngModel)]="loginForm.password" [class.glow]="focus === 'lpw'" /></label>
+          <div class="err" *ngIf="error">{{ error }}</div>
+          <button class="cta" type="submit" [disabled]="busy" [class.pressed]="focus === 'login'">{{ busy ? 'Checking…' : 'Log in' }}</button>
+        </form>
+      </div>
+
+      </section>
+
+      <div class="panel wide" *ngIf="view === 'plan'">
+        <h2>Hi {{ user?.email }} — choose your plan</h2>
+        <div class="pkgs">
+          <label class="pkg" *ngFor="let p of packages" [class.on]="+plan.packageId === p.packageId" [class.glow]="focus === 'pkg' + p.packageId">
+            <input type="radio" name="pkg" [value]="p.packageId" [(ngModel)]="plan.packageId" />
+            <b>{{ p.name }}</b><span class="price">${{ p.listPrice }}</span>
+            <small *ngIf="p.trialDays">{{ p.trialDays }}-day free trial available</small>
+          </label>
+        </div>
+        <div class="opts">
+          <label class="opt" [class.glow]="focus === 'trial'"><input type="radio" name="t" [value]="true" [(ngModel)]="plan.trial" [disabled]="!pkg?.trialDays" /> Start free trial ({{ pkg?.trialDays || 0 }} days)</label>
+          <label class="opt" [class.glow]="focus === 'buy'"><input type="radio" name="t" [value]="false" [(ngModel)]="plan.trial" /> Buy now</label>
+        </div>
+        <div class="two" *ngIf="!plan.trial">
+          <label>Card number<input [(ngModel)]="plan.cardNumber" [class.glow]="focus === 'card'" /></label>
+          <label>Discount code <small>(try WELCOME10 or FRIEND15)</small><input [(ngModel)]="plan.discountCode" placeholder="optional" [class.glow]="focus === 'code'" /></label>
+        </div>
+        <div class="err" *ngIf="error">{{ error }}</div>
+        <button class="cta" (click)="subscribe()" [disabled]="busy" [class.pressed]="focus === 'pay'">{{ busy ? 'Processing…' : plan.trial ? 'Start my free trial' : 'Pay $' + (pkg?.listPrice || '') }}</button>
+        <button class="link" (click)="view = 'study'">Skip — just browse my account</button>
+      </div>
+
+      <div class="panel" *ngIf="view === 'done'">
+        <div class="ok">✓</div>
+        <h2>You're in!</h2>
+        <p>{{ purchase?.package }} is active until {{ purchase?.expires | date:'mediumDate' }}.<span *ngIf="purchase?.codeApplied"> Code {{ purchase.codeApplied }} saved ${{ purchase.discount }}.</span><span *ngIf="purchase?.codeRejectedReason"> (Code not applied: {{ purchase.codeRejectedReason }}.)</span></p>
+        <button class="cta" (click)="view = 'study'">Start studying</button>
+        <button class="link" (click)="another()">Create another account</button>
+      </div>
+
+      <div class="panel wide" *ngIf="view === 'study'">
+        <h2>My QBank</h2>
+        <p class="muted-l">Signed in as {{ user?.email }}. Open a question in the app, download the question set as a PDF, or open the mobile app's offline copy.</p>
+        <div class="two">
+          <label>Question bank
+            <select [(ngModel)]="study.packageId"><option *ngFor="let p of packages" [value]="p.packageId">{{ p.name }}</option></select></label>
+          <label>Question #<input type="number" [(ngModel)]="study.questionId" /></label>
+        </div>
+        <div class="study-btns">
+          <button class="cta sm" (click)="openContent('app')" [disabled]="busy" [class.pressed]="focus === 'app'">📖 Open question</button>
+          <button class="cta sm alt" (click)="openContent('export')" [disabled]="busy" [class.pressed]="focus === 'export'">⬇ Download all as PDF</button>
+          <button class="cta sm alt" (click)="openContent('cache')" [disabled]="busy" [class.pressed]="focus === 'cache'">📱 Offline copy (mobile)</button>
+        </div>
+        <div class="content-box" *ngIf="contentResult" [class.denied]="contentResult.status === 403" [class.leak]="contentResult.status !== 403 && !contentResult.entitled">
+          <div class="cb-h">{{ contentResult.status === 403 ? '🔒 ' + contentResult.message : contentResult.entitled ? '✓ ' + contentResult.message : '⚠ ' + contentResult.message }}</div>
+          <div class="cb-q" *ngIf="contentResult.status !== 403 && contentResult.channel === 'app'">A 54-year-old man presents with crushing substernal chest pain radiating to the left arm… <i>(question {{ study.questionId }})</i></div>
+          <div class="xs">Server: authorization <b>{{ contentResult.authorization }}</b> · subscription {{ contentResult.subscription }} · {{ contentResult.bytesReturned | number }} bytes from <span class="mono">{{ contentResult.resource }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- presenter: what the trust engine concluded -->
+    <aside class="engine" *ngIf="presenter">
+      <div class="eh">Behind the scenes · Sentinel <small>(customers never see this)</small></div>
+      <div class="empty-e" *ngIf="!traces.length">Pick a <b>🎬 Demo scenario</b> to watch an attack (or a real customer) play out, or use the store by hand. Windows share this machine's IP and device unless you choose “Be someone else”.</div>
+      <div class="tr" *ngFor="let t of traces; let first = first" [class.first]="first">
+        <div class="tr-h">
+          <span class="vd" [ngClass]="t.d.verdict">{{ t.d.verdict === 'alert' ? '🚨' : t.d.verdict === 'watching' ? '👁' : '✓' }}</span>
+          <div style="flex:1;min-width:0"><b>{{ t.action }}</b>
+            <div class="xs">{{ verdictText(t.d.verdict) }} · {{ t.d.rowsEvaluated }} rows in {{ t.d.passMs }} ms<app-info k="verdictClean"></app-info></div>
+            <div class="xs" *ngIf="t.note">{{ t.note }}</div>
+          </div>
+        </div>
+        <ng-container *ngIf="first">
+          <div class="risk" *ngIf="t.d.accountFarm as f">
+            <div class="rl">Linked-account risk <app-info k="accountFarm"></app-info> <b>{{ f.score | number:'1.0-0' }}</b> / alert at {{ f.alertScore }}<app-info k="alertLine"></app-info> · {{ f.accounts }} linked account(s), case needs {{ f.minAccounts }}</div>
+            <div class="bar"><i [style.width.%]="f.score" [class.hot]="f.score >= f.alertScore"></i><span class="th" [style.left.%]="f.alertScore"></span></div>
+            <div class="fx" *ngFor="let x of f.factors"><span>+{{ x.weight }}</span><span class="fxt">{{ x.rationale }}<app-info [k]="x.signal"></app-info></span></div>
+            <div class="xs" *ngIf="!f.corroborated">Shared network only — not enough to raise a case.</div>
+          </div>
+          <div class="risk" *ngIf="t.d.credentialStuffing.failuresFromIp > 0">
+            <div class="rl">Failed logins from this IP<app-info k="credentialStuffing"></app-info>: <b>{{ t.d.credentialStuffing.failuresFromIp }}</b> across {{ t.d.credentialStuffing.distinctAccounts }} account(s) · alert at {{ t.d.credentialStuffing.minFailures }} across {{ t.d.credentialStuffing.minDistinctAccounts }}</div>
+            <div class="bar"><i [style.width.%]="Math.min(100, 100 * t.d.credentialStuffing.failuresFromIp / t.d.credentialStuffing.minFailures)"></i></div>
+          </div>
+          <div class="case" *ngFor="let c of t.d.cases" (click)="openConsole(c.caseId)">
+            <b>{{ c.kind === 'Created' ? 'Case raised' : 'Case ' + c.kind.toLowerCase() }} #{{ c.caseId }} · {{ c.severity }} · {{ c.score | number:'1.0-0' }}</b>
+            <div>{{ c.title }}</div>
+            <div class="xs" *ngIf="c.latencyMs != null">Detected {{ c.latencyMs }} ms after this request<app-info k="latency"></app-info> · open in console ↗</div>
+            <div class="xs" *ngIf="c.change">{{ c.change }}</div>
+          </div>
+        </ng-container>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- scenario picker -->
+<div class="pk-back" *ngIf="picker" (click)="picker = false">
+  <div class="pk" (click)="$event.stopPropagation()">
+    <div class="pk-h"><h2>🎬 Demo scenarios</h2><span>Each one plays out right here in the store — typing, clicking and switching identities — against the real API. Watch the trust engine on the right and the Sentinel console in another window.</span>
+      <button class="sbtn" (click)="picker = false">✕</button></div>
+    <div class="pk-body">
+      <div class="pk-list">
+        <div class="pk-group">Attacks — should alert</div>
+        <button class="pk-item" *ngFor="let s of attacks" [class.on]="picked === s" (click)="pick(s)"><span>{{ s.icon }}</span>{{ s.title }}</button>
+        <div class="pk-group">Real customers — must stay quiet</div>
+        <button class="pk-item" *ngFor="let s of legit" [class.on]="picked === s" (click)="pick(s)"><span>{{ s.icon }}</span>{{ s.title }}</button>
+      </div>
+      <div class="pk-detail" *ngIf="picked">
+        <h3>{{ picked.icon }} {{ picked.title }}<app-info *ngIf="picked.glossary" [k]="picked.glossary"></app-info></h3>
+        <div class="pk-sec">How it happens</div><p>{{ picked.story }}</p>
+        <div class="pk-sec">What Sentinel should do</div><p>{{ picked.expect }}</p>
+        <div class="pk-params" *ngIf="picked.params.length">
+          <label *ngFor="let p of picked.params">{{ p.label }} <small>({{ p.min }}–{{ p.max }})</small>
+            <input type="number" [min]="p.min" [max]="p.max" [(ngModel)]="params[p.key]" /></label>
+        </div>
+        <div class="pace pk-pace">Pace:
+          <button [class.on]="speed === 'slow'" (click)="speed = 'slow'">Slow (presenting)</button>
+          <button [class.on]="speed === 'normal'" (click)="speed = 'normal'">Normal</button>
+          <button [class.on]="speed === 'fast'" (click)="speed = 'fast'">Fast</button>
+        </div>
+        <button class="cta" (click)="runScenario()">▶ Play this scenario</button>
+      </div>
+    </div>
+  </div>
+</div>

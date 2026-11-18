@@ -1,206 +1,58 @@
-<div class="rp-head">
-  <div>
-    <h1>Rules Portal</h1>
-    <div class="muted" style="font-size:13px">Select any rule to read exactly what it checks and its thresholds — toggle it on/off, or add a new rule in plain English.</div>
-  </div>
-  <button class="btn" (click)="openAuthor()">+ Add rule</button>
-</div>
-
-<div class="rp-toolbar">
-  <input class="rp-search" [(ngModel)]="search" placeholder="Search rules…" />
-  <div class="rp-cats">
-    <button *ngFor="let c of categories" class="catchip" [class.on]="filterCat === c" (click)="filterCat = c">{{ c === 'all' ? 'All' : c }}</button>
-  </div>
-</div>
-
-<div class="rp-grid">
-  <!-- left: selectable list grouped by category -->
-  <div class="card rp-list">
-    <div *ngFor="let g of grouped" class="rp-group">
-      <div class="rp-gcat">{{ g.cat }} <span class="muted">({{ g.items.length }})</span></div>
-      <button *ngFor="let r of g.items" class="rp-item" [class.sel]="selected && selected.ruleId === r.ruleId" (click)="select(r)">
-        <span class="rp-i-main">
-          <span class="rp-i-name">{{ r.name || r.ruleId }}</span>
-          <span class="rp-i-id mono">{{ r.ruleId }}</span>
-        </span>
-        <span class="sev {{ (r.severity || 'medium') | lowercase }}">{{ r.severity || '—' }}</span>
-        <span class="toggle" [class.on]="r.enabled" (click)="toggle(r, $event)" [title]="r.enabled ? 'Enabled' : 'Disabled'"></span>
-      </button>
+<div class="page">
+  <div class="page-h">
+    <div class="titles">
+      <h1>Rules portal</h1>
+      <div class="lede">What Sentinel looks for, who owns it, and how well it performs. No one edits a live rule directly: authors propose a version with a reason and a dry-run, a different Admin approves it, and every change is kept.</div>
     </div>
-    <div *ngIf="!filtered.length" class="muted" style="padding:14px">No rules match.</div>
+    <a class="btn primary" routerLink="/rules/new" *ngIf="session.can('propose-rules'); else noAuthor">＋ New rule</a>
+    <ng-template #noAuthor><span class="chip warn" title="Switch persona to Jordan (Rule author) or Maya (Admin)">{{ session.user.role }} can view rules but not change them</span></ng-template>
   </div>
 
-  <!-- right: read a rule OR add a rule -->
-  <div class="card rp-detail">
-
-    <!-- ADD A RULE (wizard) -->
-    <div *ngIf="showAuthor" class="wiz">
-      <div class="wiz-head">
-        <div class="wiz-ic">✨</div>
-        <div class="wiz-ht">
-          <div class="wiz-title">Add a rule in plain English<span *ngIf="selected" class="wiz-scope"> · to {{ selected.category }}</span></div>
-          <div class="wiz-sub">Describe it the way you'd say it. The AI maps it to real schema fields, asks if anything's unclear, then activates it live — no redeploy.</div>
-        </div>
-        <button class="m-x" (click)="showAuthor = false" aria-label="Close">✕</button>
+  <section class="card pend mb16" *ngIf="pending.length">
+    <div class="card-h"><h2>⏳ Waiting for approval <app-info k="fourEyes"></app-info></h2><span class="sub">{{ session.can('approve-rules') ? 'you can review these' : 'an Admin must review these' }}</span></div>
+    <div class="pend-row" *ngFor="let v of pending">
+      <div style="flex:1;min-width:240px">
+        <div class="b">{{ ruleName(v.ruleId) }} <span class="chip xs">v{{ v.versionNo }}</span></div>
+        <div class="small muted">“{{ v.changeNote }}” — proposed by {{ v.author }} · {{ v.createdUtc | ago }}</div>
       </div>
-
-      <div class="wiz-steps">
-        <div class="ws" [class.on]="step==='describe'" [class.done]="step==='review'"><span>1</span> Describe</div>
-        <div class="ws-line"></div>
-        <div class="ws" [class.on]="step==='review'"><span>2</span> Review &amp; activate</div>
-      </div>
-
-      <div *ngIf="activated" class="wiz-ok">✓ Rule <b>{{ activated }}</b> activated and running. It will raise cases on the next pass.</div>
-
-      <!-- STEP 1 — describe -->
-      <div *ngIf="step==='describe'" class="wiz-body">
-        <textarea class="wiz-ta" [(ngModel)]="text" placeholder="e.g. Flag any payment that is paid but has no Braintree transaction, over $50, excluding free trials"></textarea>
-
-        <div class="wiz-templates">
-          <div class="wiz-l">Start from a template</div>
-          <div class="tpl-group" *ngFor="let g of templates">
-            <div class="tpl-g-h">{{ g.icon }} {{ g.group }}</div>
-            <button class="tpl" *ngFor="let t of g.items" (click)="use(t)">{{ t }}</button>
-          </div>
-        </div>
-
-        <details class="wiz-browse" [open]="browseOpen">
-          <summary (click)="browseOpen = !browseOpen"><b>Browse fields you can reference</b> <span class="muted">({{ catalog?.fields?.length || 0 }} across {{ catalogTables.length }} tables)</span></summary>
-          <div class="brz" *ngFor="let t of catalogTables">
-            <div class="brz-t mono">{{ t.table }}</div>
-            <div class="brz-f">
-              <span class="fchip" *ngFor="let f of t.fields" [title]="f.type + (f.note ? ' — ' + f.note : '')" (click)="insertPhrase(f.synonyms && f.synonyms.length ? f.synonyms[0] : f.field)">{{ f.field }}</span>
-            </div>
-          </div>
-        </details>
-
-        <div class="wiz-cta">
-          <button class="btn big" (click)="interpret()" [disabled]="busy || !text">{{ busy ? '✨ Interpreting…' : '✨ Interpret with AI' }}</button>
-        </div>
-      </div>
-
-      <!-- STEP 2 — review -->
-      <div *ngIf="step==='review'" class="wiz-body">
-        <div class="conf">
-          <div class="conf-l">AI confidence</div>
-          <div class="conf-bar"><i [style.width.%]="(result.confidence||0)*100" [class.low]="result.confidence<0.7"></i></div>
-          <div class="conf-v">{{ (result.confidence||0)*100 | number:'1.0-0' }}%</div>
-        </div>
-        <p class="wiz-expl">{{ result.explanation }}</p>
-
-        <div class="wiz-l">Field mappings</div>
-        <div class="maps">
-          <div class="mapc" *ngFor="let m of result.fieldMappings">
-            <span class="mapc-p">“{{ m.phrase }}”</span>
-            <span class="mapc-arr">→</span>
-            <span class="mapc-f mono">{{ m.table }}.{{ m.field }}</span>
-            <span class="mapc-i">{{ m.interpretation }}</span>
-          </div>
-          <div *ngIf="!result.fieldMappings?.length" class="muted">No fields mapped yet — add detail or answer the questions below.</div>
-        </div>
-
-        <div *ngIf="result.clarifyingQuestions?.length" class="wiz-q">
-          <div class="wiz-l">A few questions first</div>
-          <div *ngFor="let q of result.clarifyingQuestions" class="qc">
-            <div class="qc-q">{{ q }}</div>
-            <input [(ngModel)]="answers[keyOf(q)]" placeholder="your answer" />
-          </div>
-          <button class="btn ghost" (click)="interpret()">Re-interpret with answers</button>
-        </div>
-
-        <div *ngIf="result.proposedRule" class="propose">
-          <div class="wiz-l">Proposed rule — review &amp; edit</div>
-          <div class="prop-row">
-            <label>Name</label>
-            <input [(ngModel)]="result.proposedRule.name" />
-          </div>
-          <div class="prop-row">
-            <label>Severity</label>
-            <select [(ngModel)]="result.proposedRule.severity">
-              <option *ngFor="let s of severities" [value]="s">{{ s }}</option>
-            </select>
-          </div>
-          <div class="prop-row">
-            <label>Target</label>
-            <span class="chip mono">{{ result.proposedRule.target }}</span>
-          </div>
-          <div class="prop-conds">
-            <div class="wiz-l2">Conditions (all must match)</div>
-            <div class="cond" *ngFor="let c of result.proposedRule.when">
-              <span class="cond-f mono">{{ c.field }}</span>
-              <span class="cond-o">{{ c.op }}</span>
-              <span class="cond-v mono">{{ c.value || (c.values ? c.values.join(' / ') : '') }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="wiz-cta">
-          <button class="btn ghost" (click)="back()">‹ Back</button>
-          <button class="btn big ok" (click)="activate()" [disabled]="result.clarifyingQuestions?.length || !result.proposedRule">✓ Activate rule</button>
-          <span class="muted" style="font-size:12px" *ngIf="result.clarifyingQuestions?.length">answer the questions first</span>
-        </div>
-      </div>
+      <a class="btn sm" [routerLink]="['/rules', v.ruleId]" [queryParams]="{ review: v.versionNo }">{{ session.can('approve-rules') && v.author !== session.user.username ? 'Review →' : 'View →' }}</a>
     </div>
+  </section>
 
-    <!-- READ A RULE -->
-    <div *ngIf="!showAuthor && selected">
-      <div class="rp-d-head">
-        <div>
-          <h2 style="margin:0">{{ selected.name || selected.ruleId }}</h2>
-          <div class="muted mono" style="font-size:12px">{{ selected.ruleId }} · {{ selected.version }}</div>
-        </div>
-        <div class="row">
-          <span class="sev {{ (selected.severity || 'medium') | lowercase }}">{{ selected.severity || '—' }}</span>
-          <span class="chip">{{ selected.isDeclarative ? 'NL-authored' : 'built-in' }}</span>
-          <button class="btn xs" [class.ghost]="selected.enabled" (click)="toggle(selected)">{{ selected.enabled ? 'Disable' : 'Enable' }}</button>
-        </div>
-      </div>
-
-      <p class="rp-desc">{{ selected.description }}</p>
-
-      <div *ngIf="logicFor(selected) as lg">
-        <div class="ai-l">What this rule checks</div>
-        <p style="font-size:14px;margin:4px 0 6px">{{ lg.summary }}</p>
-        <ul class="rp-checks"><li *ngFor="let c of lg.checks">{{ c }}</li></ul>
-      </div>
-
-      <div *ngIf="declarative(selected) as d">
-        <div class="ai-l">Conditions</div>
-        <div class="ev">Target table: <b>{{ d.target }}</b> · raise a case per matching row</div>
-        <div class="ev mono" *ngFor="let c of d.when">{{ c.field }} {{ c.op }} {{ c.value || (c.values ? c.values.join(' / ') : '') }}</div>
-      </div>
-
-      <div *ngIf="config(selected).length">
-        <div class="ai-l">Thresholds &amp; config</div>
-        <table class="rp-cfg"><tbody>
-          <tr *ngFor="let kv of config(selected)"><td class="mono k">{{ kv.k }}</td><td class="mono">{{ kv.v }}</td></tr>
-        </tbody></table>
-      </div>
-
-      <details class="devinfo rp-tech" *ngIf="schemaFor(selected).length">
-        <summary>
-          <span class="dev-sum">{{ '{' }}&#8203;{{ '}' }} Technical details — DB schema fields</span>
-          <span class="muted" style="font-size:12px">tables &amp; columns this rule reads</span>
-        </summary>
-        <div class="rp-tech-body">
-          <div class="rp-tbl" *ngFor="let t of schemaFor(selected)">
-            <div class="rp-tbl-name mono">{{ t.table }}</div>
-            <div class="rp-tbl-fields">
-              <span class="fchip mono" *ngFor="let f of t.fields">{{ f }}</span>
-            </div>
-          </div>
-        </div>
-      </details>
-
-      <div class="row" style="margin-top:16px">
-        <button class="btn ghost" (click)="openAuthor()">+ Add a rule to {{ selected.category }}</button>
-      </div>
-    </div>
-
-    <!-- EMPTY -->
-    <div *ngIf="!showAuthor && !selected" class="rp-empty">
-      <div class="rp-empty-ic">☰</div>
-      <div class="muted">Select a rule on the left to read what it checks and its thresholds — or <a style="cursor:pointer" (click)="openAuthor()">add a new rule</a>.</div>
+  <div class="filters">
+    <div class="search" style="width:300px"><input [(ngModel)]="q" placeholder="Search rules…" /></div>
+    <div class="seg">
+      <button [class.on]="filter === 'all'" (click)="filter = 'all'">All</button>
+      <button [class.on]="filter === 'live'" (click)="filter = 'live'">Live</button>
+      <button [class.on]="filter === 'off'" (click)="filter = 'off'">Off / pending</button>
+      <button [class.on]="filter === 'coded'" (click)="filter = 'coded'">Engineered<app-info k="engineered"></app-info></button>
+      <button [class.on]="filter === 'authored'" (click)="filter = 'authored'">Authored here<app-info k="authored"></app-info></button>
     </div>
   </div>
+
+  <div class="rules">
+    <a class="card rule" *ngFor="let r of shown" [routerLink]="['/rules', r.ruleId]" [class.off]="!r.isLive">
+      <div class="row">
+        <span class="cat-dot" [style.background]="catColor(r.category)"></span>
+        <h3>{{ r.name }}</h3>
+        <span class="sev" [ngClass]="sevClass(r.severity)">{{ r.severity }}</span>
+      </div>
+      <div class="row wrap">
+        <span class="chip" [ngClass]="r.isLive ? 'good' : r.status === 'PendingApproval' ? 'warn' : 'bad'">{{ statusLabel(r) }}</span>
+        <span class="chip" [title]="r.kind === 'coded' ? kindHelp.coded : kindHelp.authored">{{ r.kind === 'coded' ? 'Engineered' : 'Authored' }}</span>
+        <span class="chip outline">v{{ r.versionNo }}</span>
+        <span class="chip warn" *ngIf="r.pending">change pending</span>
+        <span class="faint xs">owner {{ r.owner || r.author || '—' }}</span>
+      </div>
+      <div class="desc">{{ r.description }}</div>
+      <div class="nums">
+        <div><b>{{ r.stats.open }}</b><span>open</span></div>
+        <div><b>{{ r.stats.total }}</b><span>all-time</span></div>
+        <div><b>{{ pct(r.stats.precision) }}</b><span>precision<app-info k="precision"></app-info></span></div>
+        <div><b>{{ r.stats.confirmedUsd | usd:'short' }}</b><span>confirmed $</span></div>
+      </div>
+      <div class="xs faint">{{ r.stats.lastFiredUtc ? 'Last fired ' + (r.stats.lastFiredUtc | ago) : 'Has not fired yet' }}</div>
+    </a>
+  </div>
+  <div class="empty" *ngIf="!loading && !shown.length">No rules match.</div>
 </div>

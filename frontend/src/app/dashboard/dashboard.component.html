@@ -1,81 +1,235 @@
-<div class="row" style="justify-content:space-between;align-items:flex-end">
-  <h1>Fraud &amp; Revenue Dashboard</h1>
-  <div style="text-align:right">
-    <div class="mono" style="font-size:18px;font-weight:700;color:var(--brand-2)">{{ now | date:'EEE, MMM d y · HH:mm:ss' }}</div>
-    <div class="muted" style="font-size:12px">local time · {{ now | date:'zzzz' }}</div>
+<div class="page">
+  <div class="page-h">
+    <div class="titles">
+      <h1>Command center</h1>
+      <div class="lede">How exposed we are right now, what needs a human first, and whether detection is keeping up — refreshed live as customers sign up, log in and pay.</div>
+    </div>
+    <div class="seg">
+      <button [class.on]="hours === 24" (click)="setHours(24)">24 h</button>
+      <button [class.on]="hours === 72" (click)="setHours(72)">3 days</button>
+      <button [class.on]="hours === 168" (click)="setHours(168)">7 days</button>
+    </div>
+    <button class="btn" (click)="brief()" [disabled]="briefingBusy || !o">
+      <span *ngIf="briefingBusy" class="spin"></span><span *ngIf="!briefingBusy">✦</span> Shift briefing
+    </button>
   </div>
-</div>
-<div class="muted" style="font-size:12.5px;margin-bottom:14px">
-  Live · auto-refresh every 5s · last refreshed <b>{{ updated | date:'MMM d, HH:mm:ss' }}</b>
-  · window: last {{ windowMinutes }} min
-</div>
 
-<div class="tiles">
-  <div class="tile"><div class="v">{{ patterns.totalCases || 0 }}</div><div class="l">Open risk cases</div></div>
-  <div class="tile"><div class="v">${{ (patterns.totalAtRiskUsd || 0) | number:'1.0-0' }}</div>
-    <div class="l">Revenue at risk
-      <span class="popover"><span class="infoic" (click)="showRiskInfo = !showRiskInfo" title="How is this at risk?">i</span>
-        <span class="popbox" *ngIf="showRiskInfo"><span class="arrow"></span>
-          <b>How the ${{ (patterns.totalAtRiskUsd || 0) | number:'1.0-0' }} breaks down</b>
-          <span class="f">sum of each case's business impact</span>
-          <div *ngFor="let r of patterns.byRule" style="display:flex;justify-content:space-between;gap:12px;margin:2px 0">
-            <span>{{ r.ruleId }} <span style="color:#9fb6d8">×{{ r.count }}</span></span>
-            <span class="amt">${{ r.atRiskUsd | number:'1.0-0' }}</span>
+  <div class="callout bad mb16" *ngIf="error">{{ error }}</div>
+
+  <ng-container *ngIf="o; else loading">
+    <!-- posture -->
+    <section class="posture card" [ngClass]="o.posture.level">
+      <div class="p-icon">{{ postureIcon(o.posture.level) }}</div>
+      <div class="p-main">
+        <div class="p-level">Threat posture · {{ o.posture.level }}<app-info k="posture"></app-info></div>
+        <div class="p-head">{{ o.posture.headline }}</div>
+        <div class="p-sub">
+          <span *ngIf="o.posture.unacknowledged; else allAck"><b>{{ o.posture.unacknowledged }}</b> waiting for a first look<span *ngIf="o.posture.oldestUnackMinutes != null"> · oldest {{ o.posture.oldestUnackMinutes }} min</span></span>
+          <ng-template #allAck>Every open case has been acknowledged</ng-template>
+          · <b>{{ o.posture.unassigned }}</b> without an owner
+        </div>
+      </div>
+      <div class="p-sev">
+        <span class="sev critical">{{ o.posture.critical }} Critical</span>
+        <span class="sev high">{{ o.posture.high }} High</span>
+        <span class="sev medium">{{ o.posture.medium }} Medium</span>
+      </div>
+      <a class="btn primary" routerLink="/cases" [queryParams]="{ open: 1 }">Work the queue →</a>
+    </section>
+
+    <section class="card briefing mt12" *ngIf="briefing">
+      <div class="card-h">
+        <span class="ai-badge" [class.off]="briefing.source !== 'claude'">✦ {{ briefing.source === 'claude' ? briefing.model : 'Template briefing' }}</span>
+        <h2>{{ briefing.headline }}</h2>
+        <button class="btn ghost xs" (click)="briefing = null">Close</button>
+      </div>
+      <ul><li *ngFor="let b of briefing.bullets">{{ b }}</li></ul>
+      <div class="callout info mt8"><b>Do first:</b> {{ briefing.focus }}</div>
+    </section>
+
+    <!-- KPIs -->
+    <section class="kpis mt16">
+      <div class="card kpi">
+        <div class="l">Revenue at risk<app-info k="atRisk"></app-info></div>
+        <div class="v">{{ o.kpis.atRiskOpenUsd | usd:'short' }}</div>
+        <div class="d">across {{ o.posture.openTotal }} open case(s) — what's exposed until someone acts</div>
+      </div>
+      <div class="card kpi">
+        <div class="l">Protected · 30 days<app-info k="protected"></app-info></div>
+        <div class="v good">{{ o.kpis.protectedUsd30d | usd:'short' }}</div>
+        <div class="d">confirmed fraud caught and actioned</div>
+      </div>
+      <div class="card kpi">
+        <div class="l">Time to detect <span class="chip xs">median</span><app-info k="ttd"></app-info></div>
+        <div class="v">{{ o.kpis.medianDetectSeconds != null ? (o.kpis.medianDetectSeconds * 1000 | dur) : '—' }}</div>
+        <div class="d">from the attacker's action to a case on this screen</div>
+      </div>
+      <div class="card kpi">
+        <div class="l">Time to first look <span class="chip xs">median</span><app-info k="tta"></app-info></div>
+        <div class="v">{{ o.kpis.medianAckMinutes != null ? (o.kpis.medianAckMinutes * 60000 | dur) : '—' }}</div>
+        <div class="d">from case raised to an analyst acknowledging it</div>
+      </div>
+      <div class="card kpi">
+        <div class="l">Precision · 30 days<app-info k="precision"></app-info></div>
+        <div class="v">{{ pct(o.kpis.precision30d) }}</div>
+        <div class="d">of {{ o.kpis.decided30d }} verdicts were real fraud — low means rules are noisy</div>
+      </div>
+    </section>
+
+    <!-- queue + live feed -->
+    <section class="grid g-main-side mt16">
+      <div class="card">
+        <div class="card-h">
+          <h2>Needs attention now <app-info k="queue"></app-info></h2>
+          <span class="sub">ranked by severity, acknowledgement, $ and age</span>
+          <a routerLink="/cases" [queryParams]="{ open: 1 }" class="small">All open →</a>
+        </div>
+        <div class="queue">
+          <a class="q-item" *ngFor="let c of o.queue" [routerLink]="['/cases', c.caseId]">
+            <span class="sev-bar" [ngClass]="sevClass(c.severity)"></span>
+            <div class="q-main">
+              <div class="row"><span class="sev" [ngClass]="sevClass(c.severity)">{{ c.severity }}</span><span class="q-title ellipsis">{{ c.title }}</span></div>
+              <div class="q-meta">
+                <span class="faint">#{{ c.caseId }}</span>
+                <span class="cat-dot" [style.background]="catColor(c.category)"></span>{{ c.category }}
+                <span [ngClass]="waitClass(c)">· {{ c.acknowledged ? 'acknowledged' : 'not acknowledged' }} · raised {{ c.createdUtc | ago }}</span>
+                <span *ngIf="c.assignedTo">· owner {{ c.assignedTo }}</span>
+                <span *ngIf="c.detectionLatencyMs != null" class="chip good xs">detected in {{ c.detectionLatencyMs | dur }}</span>
+              </div>
+            </div>
+            <div class="q-amt">
+              <div class="b">{{ c.businessImpactUsd | usd }}</div>
+              <div class="faint xs">score {{ c.score | number:'1.0-0' }}</div>
+            </div>
+          </a>
+          <div class="empty" *ngIf="!o.queue.length"><div class="big">✓</div>Nothing open. The engine is watching.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <h2>Live activity</h2>
+          <div class="seg">
+            <button [class.on]="feedFilter === 'all'" (click)="feedFilter = 'all'">All</button>
+            <button [class.on]="feedFilter === 'alerts'" (click)="feedFilter = 'alerts'">Alerts</button>
+            <button [class.on]="feedFilter === 'customer'" (click)="feedFilter = 'customer'">Customers</button>
           </div>
-        </span>
-      </span>
+        </div>
+        <div class="feed feed-scroll">
+          <div class="feed-item" *ngFor="let e of feed">
+            <div class="ic" [ngClass]="look(e).cls">{{ look(e).icon }}</div>
+            <div style="min-width:0">
+              <div class="t"><a *ngIf="e.caseId; else plain" [routerLink]="['/cases', e.caseId]">{{ e.title }}</a><ng-template #plain>{{ e.title }}</ng-template></div>
+              <div class="d" *ngIf="e.detail">{{ e.detail }}</div>
+            </div>
+            <div class="tm">{{ e.utc | ago }}</div>
+          </div>
+          <div class="empty" *ngIf="!feed.length">
+            Waiting for activity… open the <a routerLink="/lab">Simulation lab</a> or the customer storefront to generate some.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- traffic + emerging -->
+    <section class="grid g-main-side mt16">
+      <div class="card">
+        <div class="card-h">
+          <h2>Customer activity vs detections</h2>
+          <span class="sub">last {{ o.windowHours }} h, per hour</span>
+        </div>
+        <app-traffic-chart [data]="o.traffic.hourly"></app-traffic-chart>
+        <div class="card-f row wrap">
+          <span><b>{{ o.traffic.signups }}</b> new accounts</span>·
+          <span><b>{{ o.traffic.apiCalls }}</b> API calls</span>·
+          <span><b>{{ o.traffic.failedLogins }}</b> failed logins</span>·
+          <span><b>{{ o.traffic.payments }}</b> payments</span>·
+          <span><b>{{ o.funnel.cases }}</b> cases raised</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <h2>Building, not yet alerting <app-info k="emerging"></app-info></h2>
+          <span class="sub">below the alert line — watch list</span>
+        </div>
+        <div class="col">
+          <div class="em" *ngFor="let e of o.emerging">
+            <div class="row"><span class="b small ellipsis" style="flex:1">{{ e.title }}</span><span class="mono xs">{{ e.score | number:'1.0-0' }} / {{ e.threshold | number:'1.0-0' }}</span></div>
+            <div class="meter thick mt8"><i [style.width.%]="Math.min(100, e.score)" [style.background]="e.corroborated ? 'var(--medium)' : 'var(--text-3)'"></i>
+              <span class="mark" [style.left.%]="Math.min(99, e.threshold)"></span></div>
+            <div class="explain">{{ e.why }}</div>
+            <div class="row wrap mt8"><span class="chip xs" *ngFor="let f of e.factors">{{ factorLabel(f) }}</span></div>
+          </div>
+          <div class="empty" *ngIf="!o.emerging.length"><div class="big">◌</div>Nothing is building below the alert line.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- trend + categories -->
+    <section class="grid g2 mt16">
+      <div class="card">
+        <div class="card-h"><h2>Cases per day <app-info k="verdict"></app-info></h2><span class="sub">last 14 days · by analyst verdict</span></div>
+        <app-trend-chart [data]="o.trend"></app-trend-chart>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>Where the open exposure is <app-info k="atRisk"></app-info></h2><span class="sub">$ at risk by category</span></div>
+        <div class="cats">
+          <a class="cat" *ngFor="let c of o.categories.slice(0, 7)" routerLink="/cases" [queryParams]="{ open: 1, category: c.category }">
+            <span class="cat-name"><span class="cat-dot" [style.background]="catColor(c.category)"></span><b class="small">{{ c.category }}</b></span>
+            <div class="meter"><i [style.width.%]="100 * c.atRiskUsd / maxCat()" [style.background]="catColor(c.category)"></i></div>
+            <span class="small b num">{{ c.atRiskUsd | usd }}</span>
+            <span class="xs faint">{{ c.open }} open<span *ngIf="c.critical"> · {{ c.critical }} crit</span><span *ngIf="c.high"> · {{ c.high }} high</span></span>
+          </a>
+          <div class="empty" *ngIf="!o.categories.length">No open exposure.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- hotspots + rules -->
+    <section class="grid g2 mt16">
+      <div class="card">
+        <div class="card-h"><h2>Repeat identifiers <app-info k="hotspots"></app-info></h2><span class="sub">IPs, devices, cards and domains behind open cases</span></div>
+        <table class="t compact">
+          <thead><tr><th>Identifier</th><th class="num">Cases</th><th class="num">Accounts</th><th class="num">At risk</th><th>Last seen</th></tr></thead>
+          <tbody>
+            <tr class="click" *ngFor="let h of o.hotspots" [routerLink]="['/cases']" [queryParams]="{ q: h.value }">
+              <td><span class="ent-type">{{ h.type }}</span><span class="ent">{{ h.value }}</span> <span class="sev xs-sev" [ngClass]="sevClass(h.topSeverity)">{{ h.topSeverity }}</span></td>
+              <td class="num">{{ h.cases }}</td><td class="num">{{ h.accounts || '—' }}</td><td class="num">{{ h.atRiskUsd | usd }}</td>
+              <td class="faint small">{{ h.lastSeenUtc | ago }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="empty" *ngIf="!o.hotspots.length">No shared identifiers across open cases.</div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>Is each rule earning its keep? <app-info k="precision"></app-info></h2><a routerLink="/rules" class="small">Rules portal →</a></div>
+        <table class="t compact">
+          <thead><tr><th>Rule</th><th class="num">Open</th><th class="num">{{ o.windowHours }}h</th><th style="width:34%">Precision</th></tr></thead>
+          <tbody>
+            <tr class="click" *ngFor="let r of o.rules" [routerLink]="['/rules', r.ruleId]">
+              <td><span class="small b">{{ r.name }}</span> <span class="chip xs bad" *ngIf="!r.live">off</span></td>
+              <td class="num">{{ r.open }}</td><td class="num">{{ r.last24h }}</td>
+              <td>
+                <div class="row" *ngIf="r.precision != null; else noVerdicts">
+                  <div class="meter" style="flex:1"><i [style.width.%]="r.precision * 100" [style.background]="r.precision >= .7 ? 'var(--good)' : r.precision >= .4 ? 'var(--medium)' : 'var(--critical)'"></i></div>
+                  <span class="mono xs">{{ pct(r.precision) }}</span>
+                </div>
+                <ng-template #noVerdicts><span class="faint xs">no verdicts yet</span></ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="engine mt16 small faint">
+      Engine: last pass <b>{{ o.engine.lastPassMs }} ms</b> over <b>{{ o.funnel.rowsEvaluated | number }}</b> rows ({{ o.engine.lastTrigger }}, {{ o.engine.lastPassUtc | ago }}) ·
+      <b>{{ o.engine.rules }}</b> rules live · <b>{{ o.engine.viewers }}</b> live viewer(s) · dashboard updated {{ updated | ago }}
     </div>
-  </div>
-  <div class="tile"><div class="v">{{ subs.length }}</div><div class="l">Subscriptions active now</div></div>
-  <div class="tile"><div class="v">${{ (usage?.totalAiCostUsd || 0) | number:'1.4-4' }}</div><div class="l">AI spend (total)</div></div>
-</div>
+  </ng-container>
 
-<div class="grid2" style="margin-top:16px">
-  <div class="card">
-    <h2>Top active subscriptions <span class="muted" style="font-size:12px">(last {{ windowMinutes }} min)</span></h2>
-    <table>
-      <thead><tr><th>Sub</th><th>User</th><th class="num">Accesses</th><th class="num">Regions</th><th>Last region</th><th>Last access</th></tr></thead>
-      <tbody>
-        <tr *ngFor="let s of subs">
-          <td class="mono">{{ s.subscriptionId }}</td>
-          <td class="mono">{{ s.userId }}</td>
-          <td class="num">{{ s.accessCount }}</td>
-          <td class="num"><span [class.chip]="s.distinctCountries>1" *ngIf="s.distinctCountries>1">{{ s.distinctCountries }} ⚠</span><span *ngIf="s.distinctCountries<=1">{{ s.distinctCountries }}</span></td>
-          <td>{{ s.lastCountry }}</td>
-          <td class="mono" style="font-size:12px" [title]="s.lastAccessUtc | date:'medium'">{{ s.lastAccessUtc | date:'MMM d, HH:mm:ss' }}</td>
-        </tr>
-        <tr *ngIf="!subs.length"><td colspan="6" class="muted">No active sessions in the window.</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="card">
-    <h2>Alerts</h2>
-    <div *ngFor="let a of alerts.alerts" class="alert">
-      <span class="sev {{ a.severity | lowercase }}">{{ a.severity }}</span>
-      <div class="t"><a [routerLink]="['/cases', a.caseId]">{{ a.title }}</a>
-        <div class="muted" style="font-size:12px">{{ a.ruleId }} · score {{ a.score }} · ${{ a.businessImpactUsd | number:'1.0-0' }}</div></div>
-    </div>
-    <div *ngIf="!alerts.alerts?.length" class="muted">No open high-severity alerts.</div>
-
-    <h2 *ngIf="alerts.compromise?.length">Code / package compromise</h2>
-    <div *ngFor="let c of alerts.compromise" class="alert">
-      <span class="chip">{{ c.entity }}</span>
-      <div class="t">{{ c.cases }} fraud cases · ${{ c.atRiskUsd | number:'1.0-0' }} at risk</div>
-    </div>
-  </div>
-</div>
-
-<div class="card" style="margin-top:16px">
-  <h2>Fraud patterns — revenue at risk by rule</h2>
-  <table>
-    <tbody>
-      <tr *ngFor="let r of patterns.byRule">
-        <td style="width:220px">{{ r.ruleId }}</td>
-        <td><div class="bar"><i [style.width.%]="(r.atRiskUsd / maxRule()) * 100"></i></div></td>
-        <td class="num" style="width:70px">{{ r.count }}</td>
-        <td class="num" style="width:90px">${{ r.atRiskUsd | number:'1.0-0' }}</td>
-      </tr>
-    </tbody>
-  </table>
+  <ng-template #loading>
+    <div class="grid g3" *ngIf="!error"><div class="card" *ngFor="let i of [1,2,3]"><div class="skel" style="width:40%"></div><div class="skel mt12" style="height:32px;width:60%"></div><div class="skel mt12"></div></div></div>
+  </ng-template>
 </div>

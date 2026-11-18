@@ -1,0 +1,84 @@
+.toolbar { padding: 0; margin-bottom: 14px; }
+.views { display: flex; gap: 4px; padding: 8px 10px 0; border-bottom: 1px solid var(--border); overflow-x: auto; }
+.views button {
+  display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; border-bottom: 2px solid transparent;
+  color: var(--text-2); font: 600 13px var(--sans); padding: 10px 12px 11px; cursor: pointer; white-space: nowrap; margin-bottom: -1px;
+}
+.views button:hover { color: var(--text-1); }
+.views button.on { color: var(--text-1); border-bottom-color: var(--accent); }
+.vc { font-size: 11px; font-weight: 700; min-width: 22px; text-align: center; padding: 1px 7px; border-radius: 10px; background: var(--surface-3); color: var(--text-2); }
+.views button.on .vc { background: var(--accent-soft); color: var(--accent-strong); }
+.views button.warn .vc { background: var(--critical-soft); color: var(--critical-ink); }
+
+.controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 16px; }
+.bigsearch { position: relative; flex: 1 1 340px; min-width: 260px; }
+.bigsearch input { height: 40px; padding-left: 38px; padding-right: 34px; font-size: 14px; background: var(--surface-2); border-radius: 10px; }
+.mag { position: absolute; left: 13px; top: 50%; transform: translateY(-53%); color: var(--text-3); font-size: 18px; pointer-events: none; }
+.x { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 6px; border: 0; background: var(--surface-3); color: var(--text-2); cursor: pointer; font-size: 11px; }
+.x:hover { color: var(--text-1); }
+
+.sevchips { display: flex; gap: 6px; flex-wrap: wrap; }
+.sevchip {
+  display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 12px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-2); font: 600 12.5px var(--sans); transition: all .12s;
+}
+.sevchip:hover { color: var(--text-1); border-color: var(--text-3); }
+.sevchip .dot { width: 9px; height: 9px; display: inline-block; }
+.sevchip.critical .dot { background: var(--critical); transform: rotate(45deg); }
+.sevchip.high .dot { background: var(--high); clip-path: polygon(50% 0, 100% 100%, 0 100%); width: 10px; }
+.sevchip.medium .dot { background: var(--medium); border-radius: 50%; }
+.sevchip.low .dot { background: var(--low); border-radius: 2px; }
+.sevchip .n { font-size: 11px; color: var(--text-3); font-weight: 700; }
+.sevchip.on.critical { background: var(--critical-soft); border-color: var(--critical); color: var(--critical-ink); }
+.sevchip.on.high { background: var(--high-soft); border-color: var(--high); color: var(--high-ink); }
+.sevchip.on.medium { background: var(--medium-soft); border-color: var(--medium); color: var(--medium-ink); }
+.sevchip.on.low { background: var(--low-soft); border-color: var(--low); color: var(--low-ink); }
+.sevchip.on .n { color: inherit; }
+
+.dd { position: relative; }
+.ddbtn {
+  display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-1); font: 600 12.5px var(--sans); white-space: nowrap;
+}
+.ddbtn:hover, .ddbtn.active { border-color: var(--accent); }
+.badge { font-size: 10.5px; font-weight: 750; background: var(--accent); color: #fff; border-radius: 10px; padding: 1px 6px; }
+.car { color: var(--text-3); font-size: 10px; }
+.ddmenu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; min-width: 240px; padding: 6px; border-radius: 12px;
+  background: var(--surface-1); border: 1px solid var(--border-strong); box-shadow: 0 16px 40px rgba(0,0,0,.4); display: flex; flex-direction: column;
+}
+.ddmenu.right { left: auto; right: 0; }
+.ddopt {
+  display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; cursor: pointer; font: 500 13px var(--sans);
+  color: var(--text-1); background: none; border: 0; text-align: left;
+}
+.ddopt:hover { background: var(--surface-3); }
+.ddopt.on { color: var(--accent-strong); }
+.ddopt .lbl { flex: 1; }
+.ddopt .n { font-size: 11.5px; color: var(--text-3); }
+.ddclear { margin-top: 4px; padding: 8px; border: 0; border-top: 1px solid var(--border); background: none; color: var(--text-2); font: 600 12px var(--sans); cursor: pointer; }
+.ddclear:hover { color: var(--text-1); }
+.cdot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 6px; flex: none; }
+.ddopt .cdot { margin-right: 0; }
+
+.active { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 0 16px 14px; }
+.fchip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 4px 0 10px; border-radius: 999px; background: var(--accent-soft); color: var(--text-1); font-size: 12px; font-weight: 600; }
+.fchip .cdot { margin-right: 0; }
+.fchip button { width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(255,255,255,.08); color: var(--text-2); cursor: pointer; font-size: 9px; }
+.fchip button:hover { background: var(--critical-soft); color: var(--critical-ink); }
+.sev-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.sev-dot.critical { background: var(--critical); } .sev-dot.high { background: var(--high); } .sev-dot.medium { background: var(--medium); } .sev-dot.low { background: var(--low); }
+.clearall { border: 0; background: none; color: var(--accent-strong); font: 600 12px var(--sans); cursor: pointer; margin-left: 4px; }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+@media (max-width: 900px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stats div { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; display: flex; align-items: baseline; gap: 8px; }
+.stats b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.stats span { font-size: 12px; color: var(--text-3); }
+.stats div.bad { border-color: rgba(208,59,59,.45); }
+.stats div.bad b { color: var(--critical-ink); }
+
+.title-cell { min-width: 280px; }
+.title-cell .tt { font-weight: 600; }
+.ents { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+.late { color: var(--critical-ink); font-weight: 650; }

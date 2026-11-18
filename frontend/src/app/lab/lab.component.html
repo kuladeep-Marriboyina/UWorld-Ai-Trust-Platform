@@ -1,0 +1,141 @@
+<div class="page">
+  <div class="page-h">
+    <div class="titles">
+      <h1>Simulation lab</h1>
+      <div class="lede">Replays real behaviour through the customer storefront API — the same signup, login and checkout calls a student's browser makes. Nothing is planted: Sentinel has to spot it from the event stream, live.</div>
+    </div>
+    <button class="btn" *ngIf="session.can('reset-demo')" (click)="reset()" [disabled]="resetting"><span class="spin" *ngIf="resetting"></span>↺ Reset demo data</button>
+  </div>
+  <div class="callout info mb12" *ngIf="resetMsg">{{ resetMsg }}</div>
+  <div class="callout warn mb12" *ngIf="!session.can('simulate')">{{ session.user.displayName }} ({{ session.user.role }}) can watch but not run simulations.</div>
+
+  <div class="lab">
+    <!-- scenario picker -->
+    <div class="col" style="gap:10px">
+      <div class="section-title">Live scenarios</div>
+      <button class="scard" *ngFor="let s of scenarios" (click)="select(s)" [class.on]="s === sc" [disabled]="running && s !== sc">
+        <span class="sicon">{{ s.icon }}</span>
+        <span style="min-width:0">
+          <span class="row"><b>{{ s.title }}</b></span>
+          <span class="chip xs mt8" [ngClass]="s.kind === 'attack' ? 'bad' : 'good'">{{ s.kind === 'attack' ? 'Attack — should alert' : 'Legitimate — must stay quiet' }}</span>
+        </span>
+      </button>
+
+      <div class="card mt16 mw">
+        <h3>Try it by hand — multiple windows</h3>
+        <ol class="small muted" style="padding-left:18px;line-height:1.7;margin:8px 0">
+          <li>Open storefront windows. They share one <b>machine</b> (IP + device), like tabs on one laptop.</li>
+          <li>Use <b>🤖 Next farm account</b> in each window and create accounts.</li>
+          <li>Watch this console: a case pops up on the third linked account.</li>
+          <li>For real customers, press <b>👤 Be someone else</b> and use <b>🎓 A real student</b> — nothing is raised.</li>
+        </ol>
+        <div class="xs faint mb8" *ngIf="machine">Shared machine<app-info k="sharedMachine"></app-info>: <span class="mono">{{ machine.ip }}</span> · <span class="mono">{{ machine.device }}</span></div>
+        <div class="row wrap">
+          <button class="btn sm primary" (click)="openWindows(3)">Open 3 windows</button>
+          <button class="btn sm" (click)="openWindows(1)">Open 1</button>
+          <button class="btn sm ghost" (click)="newMachine()" title="Next windows get a fresh shared IP/device">New machine</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- runner -->
+    <div class="col" style="gap:16px;min-width:0">
+      <section class="card">
+        <div class="row top">
+          <span class="bigicon">{{ sc.icon }}</span>
+          <div style="flex:1;min-width:0">
+            <h2>{{ sc.title }}</h2>
+            <div class="small muted mt8">{{ sc.summary }}</div>
+            <div class="small mt8"><b>Expected:</b> {{ sc.expect }}</div>
+          </div>
+        </div>
+        <div class="row wrap mt16">
+          <button class="btn primary" *ngIf="!running" (click)="play()" [disabled]="!session.can('simulate')">▶ {{ started && !done ? 'Resume' : done ? 'Run again (fresh identities)' : 'Run scenario' }}</button>
+          <button class="btn" *ngIf="running" (click)="pause()">⏸ Pause</button>
+          <button class="btn ghost" (click)="restart()" [disabled]="!started">↺ Restart</button>
+          <span class="spacer"></span>
+          <span class="small faint">Pace</span>
+          <div class="seg">
+            <button [class.on]="speed === 2500" (click)="speed = 2500">Presenter</button>
+            <button [class.on]="speed === 1200" (click)="speed = 1200">Normal</button>
+            <button [class.on]="speed === 300" (click)="speed = 300">Fast</button>
+          </div>
+        </div>
+
+        <!-- meter -->
+        <div class="meterbox mt16">
+          <div class="row"><b class="small" style="flex:1">{{ sc.meter === 'stuffing' ? 'Login-attack pressure from the attacker\'s IP' : 'Linked-account risk for the latest account' }}</b>
+            <span class="mono b">{{ meter.value | number:'1.0-0' }}<span class="faint"> / alert {{ meter.threshold }}</span><app-info k="alertLine"></app-info></span></div>
+          <div class="bigmeter mt8">
+            <i [style.width.%]="Math.min(100, meter.value)" [class.hot]="meter.value >= meter.threshold" [class.warm]="meter.value > 0 && meter.value < meter.threshold"></i>
+            <span class="th" [style.left.%]="Math.min(99.5, meter.threshold)"><em>alert line</em></span>
+          </div>
+          <div class="xs faint mt8">{{ meter.label }}</div>
+          <div class="row wrap mt8"><span class="chip xs" *ngFor="let f of meter.factors" [title]="f.rationale">{{ f.signal }} +{{ f.weight }}<app-info [k]="f.signal"></app-info></span></div>
+        </div>
+
+        <!-- outcome -->
+        <div class="outcome bad mt16" *ngFor="let c of cases">
+          <div class="oi">🚨</div>
+          <div style="flex:1;min-width:0">
+            <b>Case #{{ c.caseId }} raised at step {{ c.firstStep }} · <span class="sev" [ngClass]="sevClass(c.severity)">{{ c.severity }}</span> score {{ c.score | number:'1.0-0' }}</b>
+            <div class="small">{{ c.title }}</div>
+            <div class="xs faint">{{ c.latencyMs != null ? 'Detected ' + c.latencyMs + ' ms after the triggering request' : '' }}<span *ngIf="c.updates"> · grew {{ c.updates }} time(s) as the attack continued</span></div>
+          </div>
+          <a class="btn sm" [routerLink]="['/cases', c.caseId]">Investigate →</a>
+        </div>
+        <div class="outcome good mt16" *ngIf="done && !cases.length">
+          <div class="oi">✓</div>
+          <div><b>No case raised — {{ stepsRun }} actions passed untouched.</b><div class="small">{{ sc.kind === 'legit' ? 'Exactly right: legitimate customers are never flagged.' : 'Nothing crossed the alert line.' }}</div></div>
+        </div>
+        <div class="callout mt12 small" *ngIf="done"><b>What this proves:</b> {{ sc.proves }}</div>
+      </section>
+
+      <!-- steps -->
+      <section class="card">
+        <div class="card-h"><h2>Requests</h2><span class="sub">{{ stepsRun }} / {{ steps.length }} sent · click one to see exactly what went over the wire</span></div>
+        <div class="steps">
+          <div class="srow" *ngFor="let s of steps; let i = index" [ngClass]="s.state + ' ' + verdictOf(s)" (click)="expanded = expanded === s ? null : s">
+            <span class="sn">{{ stepIcon(s) || i + 1 }}</span>
+            <div style="flex:1;min-width:0">
+              <div class="small"><b>{{ s.label }}</b></div>
+              <div class="xs faint">{{ s.actor }} · <span class="mono">{{ s.request }}</span> · IP <span class="mono">{{ s.identity.ip }}</span> · device <span class="mono">{{ s.identity.device }}</span><span *ngIf="s.identity.ua"> · {{ s.identity.ua }}</span></div>
+            </div>
+            <span class="vchip" *ngIf="verdictOf(s)" [ngClass]="verdictOf(s)">{{ verdictOf(s) === 'alert' ? 'ALERT' : verdictOf(s) === 'watching' ? 'watching' : verdictOf(s) === 'error' ? s.result?.status : 'clean' }}</span>
+            <span class="xs mono faint" *ngIf="s.result">{{ s.result.status }}</span>
+            <div class="sdetail" *ngIf="expanded === s" (click)="$event.stopPropagation()">
+              <div class="grid g2" style="gap:10px">
+                <div><div class="section-title">Request body</div><pre>{{ json(s.payload) }}</pre></div>
+                <div><div class="section-title">Trust engine response</div><pre>{{ s.result ? json(compactDetection(s)) : 'not sent yet' }}</pre></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- injections -->
+      <section class="card">
+        <div class="card-h"><h2>Data-level injections <app-info k="dataInjection"></app-info></h2><span class="sub">payment, discount, region and access attacks written straight into the source tables (as a back-office bug or insider would)</span></div>
+        <div class="groups">
+          <div class="grp" *ngFor="let g of groups">
+            <button class="grp-h" (click)="openGroup = openGroup === g ? null : g"><span>{{ g.icon }}</span><b style="flex:1;text-align:left">{{ g.label }}</b><span class="faint xs">{{ g.variants.length }} variants {{ openGroup === g ? '▴' : '▾' }}</span></button>
+            <div *ngIf="openGroup === g" class="vars">
+              <div class="xs muted mb8">{{ g.summary }}</div>
+              <div class="var" *ngFor="let v of g.variants">
+                <div style="flex:1;min-width:0"><b class="small">{{ v.label }}</b><div class="xs faint">{{ v.detail }}</div><div class="xs mt8"><b>Expect:</b> {{ v.expect }}</div></div>
+                <button class="btn sm" (click)="inject(v)" [disabled]="injecting === v.key || !session.can('simulate')"><span class="spin" *ngIf="injecting === v.key"></span>Inject</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="inj" *ngFor="let r of injections">
+          <b class="small">{{ r.variant.label }}</b> — <span *ngIf="r.error" class="small" style="color:var(--critical-ink)">{{ r.error }}</span>
+          <ng-container *ngIf="r.result"><span class="small">{{ r.result.injected.length }} rows written · {{ r.result.newCases.length }} case change(s)</span>
+            <div *ngFor="let c of r.result.newCases"><a class="small" [routerLink]="['/cases', c.caseId]"><span class="sev" [ngClass]="sevClass(c.severity)">{{ c.severity }}</span> #{{ c.caseId }} {{ c.title }}</a></div>
+            <details class="xs faint"><summary>Rows written</summary><div class="mono" *ngFor="let l of r.result.injected">{{ l }}</div></details>
+          </ng-container>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

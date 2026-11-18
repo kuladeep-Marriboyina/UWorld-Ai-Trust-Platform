@@ -1,41 +1,114 @@
-<h1>Risk cases</h1>
-<div class="row" style="margin:10px 0 14px">
-  <select [(ngModel)]="filterRule" (change)="load()" style="width:auto">
-    <option value="">All rules</option>
-    <option *ngFor="let r of rules" [value]="r">{{ r }}</option>
-  </select>
-  <select [(ngModel)]="filterSeverity" (change)="load()" style="width:auto">
-    <option value="">All severities</option>
-    <option value="Critical">Critical</option>
-    <option value="High">High</option>
-    <option value="Medium">Medium</option>
-    <option value="Low">Low</option>
-  </select>
-  <span class="muted">{{ cases.length }} cases</span>
-</div>
+<div class="page">
+  <div class="page-h">
+    <div class="titles">
+      <h1>Cases</h1>
+      <div class="lede">Every case is evidence-backed and scored. Critical cases should get a first look within 15 minutes, high within an hour — overdue ones are marked.</div>
+    </div>
+  </div>
 
-<div class="card">
-  <table>
-    <thead><tr><th>#</th><th>Severity</th><th class="num">Score</th><th>Rule</th><th>Title</th><th class="num">$ at risk</th><th>Status</th></tr></thead>
-    <tbody>
-      <tr class="clickable" *ngFor="let c of cases" [routerLink]="['/cases', c.caseId]">
-        <td class="mono">{{ c.caseId }}</td>
-        <td><span class="sev {{ c.severity | lowercase }}">{{ c.severity }}</span></td>
-        <td class="num">{{ c.score }}</td>
-        <td><span class="chip">{{ c.ruleId }}</span></td>
-        <td>{{ c.title }}</td>
-        <td class="num">
-          <span class="popover">${{ c.businessImpactUsd | number:'1.0-0' }}<span class="infoic" (click)="toggleImpact(c.caseId, $event)" title="How is this at risk?">i</span>
-            <span class="popbox" *ngIf="openImpact === c.caseId" (click)="$event.stopPropagation()"><span class="arrow"></span>
-              <b>How this ${{ c.businessImpactUsd | number:'1.0-2' }} is at risk</b>
-              <span class="f">{{ impact(c.ruleId).formula }}</span>
-              {{ impact(c.ruleId).note }}
-              <div style="margin-top:8px;color:#9fb6d8">Observed: {{ c.actual }}</div>
-            </span>
-          </span>
-        </td>
-        <td><span class="pill {{ c.status | lowercase }}">{{ c.status }}</span></td>
-      </tr>
-    </tbody>
-  </table>
+  <section class="toolbar card">
+    <!-- views -->
+    <div class="views">
+      <button *ngFor="let v of [['open','Open'],['unack','Needs a first look'],['mine','Assigned to me'],['overdue','Overdue'],['resolved','Resolved'],['all','All']]"
+              [class.on]="view === v[0]" [class.warn]="v[0] === 'overdue' && viewCount('overdue') > 0" (click)="setView($any(v[0]))">
+        {{ v[1] }}<span class="vc">{{ viewCount($any(v[0])) }}</span>
+      </button>
+    </div>
+
+    <!-- controls -->
+    <div class="controls">
+      <div class="bigsearch">
+        <span class="mag">⌕</span>
+        <input [(ngModel)]="q" (ngModelChange)="onSearch()" placeholder="Search by title, #id, IP, email, device or card…" aria-label="Search cases" />
+        <button class="x" *ngIf="q" (click)="clearSearch()" aria-label="Clear search">✕</button>
+      </div>
+
+      <div class="sevchips" role="group" aria-label="Severity">
+        <button *ngFor="let s of sevList" class="sevchip" [ngClass]="sevClass(s)" [class.on]="severities.has(s)" (click)="toggleSev(s)" [attr.aria-pressed]="severities.has(s)">
+          <span class="dot"></span>{{ s }}<span class="n">{{ sevCount(s) }}</span>
+        </button>
+      </div>
+
+      <div class="dd" (click)="$event.stopPropagation()">
+        <button class="ddbtn" [class.active]="categories.size" (click)="catOpen = !catOpen; sortOpen = false">
+          Category<span *ngIf="categories.size" class="badge">{{ categories.size }}</span><span class="car">▾</span>
+        </button>
+        <div class="ddmenu" *ngIf="catOpen">
+          <label class="ddopt" *ngFor="let c of categoryList">
+            <input type="checkbox" [checked]="categories.has(c)" (change)="toggleCat(c)" />
+            <span class="cdot" [style.background]="catColor(c)"></span><span class="lbl">{{ c }}</span><span class="n">{{ catCount(c) }}</span>
+          </label>
+          <button class="ddclear" *ngIf="categories.size" (click)="categories.clear(); syncUrl()">Clear categories</button>
+        </div>
+      </div>
+
+      <div class="dd" (click)="$event.stopPropagation()">
+        <button class="ddbtn" (click)="sortOpen = !sortOpen; catOpen = false">⇅ {{ sortLabels[sort] }}<span class="car">▾</span></button>
+        <div class="ddmenu right" *ngIf="sortOpen">
+          <button class="ddopt" *ngFor="let s of sortKeys" [class.on]="sort === s" (click)="setSort(s)"><span class="lbl">{{ sortLabels[s] }}</span><span *ngIf="sort === s">✓</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- active filters -->
+    <div class="active" *ngIf="activeCount">
+      <span class="faint small">Filtered by</span>
+      <span class="fchip" *ngIf="q">“{{ q }}”<button (click)="clearSearch()" aria-label="Remove search">✕</button></span>
+      <span class="fchip" *ngFor="let s of sevArr"><span class="sev-dot" [ngClass]="sevClass(s)"></span>{{ s }}<button (click)="toggleSev(s)" aria-label="Remove">✕</button></span>
+      <span class="fchip" *ngFor="let c of catArr"><span class="cdot" [style.background]="catColor(c)"></span>{{ c }}<button (click)="toggleCat(c)" aria-label="Remove">✕</button></span>
+      <button class="clearall" (click)="clearAll()">Clear all</button>
+    </div>
+  </section>
+
+  <div class="stats" *ngIf="!loading">
+    <div><b>{{ rows.length }}</b><span>case{{ rows.length === 1 ? '' : 's' }} shown</span></div>
+    <div><b>{{ urgentCount }}</b><span>critical or high</span></div>
+    <div [class.bad]="overdueCount"><b>{{ overdueCount }}</b><span>overdue for a first look<app-info k="acknowledged"></app-info></span></div>
+    <div><b>{{ totalUsd | usd }}</b><span>total impact<app-info k="impact"></app-info></span></div>
+  </div>
+
+  <div class="callout bad mb12" *ngIf="error">{{ error }}</div>
+
+  <div class="card flush">
+    <table class="t">
+      <thead>
+        <tr><th>Severity<app-info k="severity"></app-info></th><th>Case</th><th>Category</th><th class="num">Impact<app-info k="impact"></app-info></th><th>Detected<app-info k="latency"></app-info></th><th>Waiting<app-info k="acknowledged"></app-info></th><th>Owner / status</th></tr>
+      </thead>
+      <tbody>
+        <tr class="click" *ngFor="let c of rows" (click)="open(c)" [class.flash]="fresh.has(c.caseId)">
+          <td><span class="sev" [ngClass]="sevClass(c.severity)">{{ c.severity }}</span><div class="xs faint mt8">score {{ c.score | number:'1.0-0' }}</div></td>
+          <td class="title-cell">
+            <div class="tt">{{ c.title }}</div>
+            <div class="ents">
+              <span class="faint xs">#{{ c.caseId }} · {{ c.ruleId }}</span>
+              <span class="chip xs">{{ c.evidenceCount }} evidence</span>
+              <span class="disp" *ngIf="c.disposition" [ngClass]="c.disposition">{{ c.disposition === 'ConfirmedFraud' ? 'Confirmed fraud' : c.disposition === 'FalsePositive' ? 'False positive' : 'Benign' }}</span>
+            </div>
+          </td>
+          <td class="small"><span class="cdot" [style.background]="catColor(c.category)"></span>{{ c.category || '—' }}</td>
+          <td class="num"><b>{{ c.businessImpactUsd | usd }}</b></td>
+          <td class="small">
+            <span *ngIf="c.detectionLatencyMs != null; else backfill" class="chip good">in {{ c.detectionLatencyMs | dur }}</span>
+            <ng-template #backfill><span class="faint">backfill</span></ng-template>
+            <div class="xs faint mt8">{{ c.createdUtc | ago }}</div>
+          </td>
+          <td class="small">
+            <span *ngIf="c.status === 'Resolved'" class="faint">—</span>
+            <span *ngIf="c.status !== 'Resolved' && !c.acknowledgedUtc" [class.late]="overdue(c)">{{ overdue(c) ? '⚠ overdue · ' : '' }}not acknowledged</span>
+            <span *ngIf="c.status !== 'Resolved' && c.acknowledgedUtc" class="faint">acknowledged</span>
+          </td>
+          <td class="small">
+            <span class="status" [ngClass]="c.status | lowercase">{{ c.status }}</span>
+            <div class="xs faint mt8">{{ c.assignedTo || 'unassigned' }}</div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="empty" *ngIf="!loading && !rows.length">
+      <div class="big">{{ activeCount ? '⌕' : '✓' }}</div>
+      {{ activeCount ? 'No cases match these filters.' : 'Nothing in this view.' }}
+      <div class="mt8" *ngIf="activeCount"><button class="btn sm" (click)="clearAll()">Clear filters</button></div>
+    </div>
+    <div style="padding:16px" *ngIf="loading"><div class="skel" *ngFor="let i of [1,2,3,4]" style="margin:10px 0;height:20px"></div></div>
+  </div>
 </div>

@@ -1,0 +1,159 @@
+<div class="page">
+  <div class="crumbs"><a routerLink="/rules">Rules</a> / {{ r?.name || id }}</div>
+  <div class="callout bad" *ngIf="error">{{ error }}</div>
+  <div class="callout info mb12" *ngIf="msg">{{ msg }}</div>
+
+  <ng-container *ngIf="r">
+    <section class="card">
+      <div class="row wrap">
+        <span class="sev" [ngClass]="sevClass(r.severity)">{{ r.severity }}</span>
+        <span class="chip" [ngClass]="r.isLive ? 'good' : r.status === 'PendingApproval' ? 'warn' : 'bad'">{{ r.isLive ? 'Live' : r.status === 'PendingApproval' ? 'Awaiting approval' : r.status === 'Rejected' ? 'Rejected' : 'Disabled' }}</span>
+        <span class="chip" [title]="r.kind === 'coded' ? kindHelp.coded : kindHelp.authored">{{ r.kind === 'coded' ? 'Engineered detector' : 'Authored in portal' }}</span>
+        <span class="chip outline">version {{ r.versionNo }}<ng-container *ngIf="r.kind === 'coded'"> · code {{ r.codeVersion }}</ng-container></span>
+        <span class="chip">{{ r.category }}</span>
+        <span class="spacer"></span>
+        <span class="mono xs faint">{{ r.ruleId }}</span>
+      </div>
+      <h1 class="mt12">{{ r.name }}</h1>
+      <div class="muted small mt8">Owner <b>{{ r.owner || r.author || '—' }}</b><ng-container *ngIf="r.approvedBy"> · approved by <b>{{ r.approvedBy }}</b> {{ r.approvedUtc | ago }}</ng-container></div>
+      <div class="row wrap mt16">
+        <a class="btn primary" *ngIf="session.can('propose-rules') && !pendingVersion" [routerLink]="['/rules', id, 'edit']">✎ Propose a change</a>
+        <span class="chip warn" *ngIf="pendingVersion">A change (v{{ pendingVersion.versionNo }}) is waiting for approval</span>
+        <button class="btn" *ngIf="session.can('toggle-rules') && r.status !== 'PendingApproval'" (click)="toggleModal = true">{{ r.enabled ? '⏸ Disable rule' : '▶ Enable rule' }}</button>
+        <span class="faint small" *ngIf="!session.can('propose-rules')">{{ session.user.displayName }} ({{ session.user.role }}) has read-only access to rules.</span>
+      </div>
+    </section>
+
+    <!-- review panel -->
+    <section class="card review mt16" *ngIf="pendingVersion">
+      <div class="card-h">
+        <h2>⏳ Review proposed v{{ pendingVersion.versionNo }} <app-info k="fourEyes"></app-info></h2>
+        <span class="sub">by {{ pendingVersion.author }} · {{ pendingVersion.createdUtc | ago }}</span>
+      </div>
+      <div class="callout mb12"><b>Change note:</b> {{ pendingVersion.changeNote }}</div>
+      <table class="t compact diff">
+        <thead><tr><th>Field</th><th>Live now</th><th>Proposed</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let x of diff()" [class.changed]="x.changed">
+            <td class="b small">{{ x.label }}<span *ngIf="x.changed" class="chip warn xs" style="margin-left:6px">changed</span></td>
+            <td class="before" style="white-space:pre-line">{{ x.before }}</td>
+            <td class="after" style="white-space:pre-line">{{ x.after }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="mt16" *ngIf="session.can('approve-rules'); else cantApprove">
+        <div class="callout warn mb12" *ngIf="isOwnPending">Four-eyes rule: you proposed this change, so another Admin must approve it.</div>
+        <label class="field">Review note <span class="hint">required to reject; recorded either way</span>
+          <textarea [(ngModel)]="note" placeholder="e.g. Dry-run shows 2 matches, both real farms. Approved."></textarea></label>
+        <div class="row mt12">
+          <button class="btn good" (click)="approve()" [disabled]="busy || isOwnPending">✓ Approve &amp; make live</button>
+          <button class="btn danger" (click)="reject()" [disabled]="busy || isOwnPending">✕ Reject</button>
+        </div>
+      </div>
+      <ng-template #cantApprove><div class="callout mt12">Only an Admin other than the author can approve this. Switch persona to <b>Maya Chen (Admin)</b> to review.</div></ng-template>
+    </section>
+
+    <div class="grid g-main-side mt16">
+      <div class="col" style="gap:16px">
+        <section class="card">
+          <div class="section-title">What it detects (expected behaviour)</div>
+          <div class="small">{{ r.description }}</div>
+          <div class="section-title mt16">Why it exists</div>
+          <div class="small muted">{{ r.rationale || 'No business reason recorded.' }}</div>
+        </section>
+
+        <section class="card" *ngIf="r.kind === 'coded'">
+          <div class="card-h"><h2>Tunable parameters <app-info k="engineered"></app-info></h2><span class="sub">the detection logic is engineered code; these values are governed here</span></div>
+          <table class="t compact params">
+            <tbody>
+              <tr *ngFor="let p of params()">
+                <td><b class="small">{{ p.label }}</b><div class="xs faint">{{ p.help }}</div></td>
+                <td class="mono">{{ p.value }} <span class="faint">{{ p.unit }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="faint small" *ngIf="!params().length">This detector has no tunable parameters — only severity and playbook are governed here.</div>
+        </section>
+
+        <section class="card" *ngIf="r.logic">
+          <div class="card-h"><h2>Detection logic <app-info k="authored"></app-info></h2></div>
+          <div class="sentence">{{ logicSentence() }}</div>
+          <dl class="kv mt12 small">
+            <dt>Table</dt><dd class="mono">{{ r.logic.target }}</dd>
+            <dt>Conditions</dt><dd><div *ngFor="let c of r.logic.when" class="mono xs">{{ cond(c) }}</div><span *ngIf="!r.logic.when.length" class="faint">none</span></dd>
+            <dt>Exclusions</dt><dd><div *ngFor="let c of r.logic.exclusions" class="mono xs">{{ cond(c) }}</div><span *ngIf="!r.logic.exclusions?.length" class="faint">none</span></dd>
+            <dt>Grouped by</dt><dd class="mono">{{ r.logic.groupBy || '— (every row)' }}</dd>
+            <dt>Window</dt><dd>{{ r.logic.windowMinutes ? r.logic.windowMinutes + ' minutes' : '—' }}</dd>
+            <dt>Impact</dt><dd>{{ r.logic.impactField ? 'sum of ' + r.logic.impactField : r.logic.impactPerMatchUsd ? ('$' + r.logic.impactPerMatchUsd + ' per match') : 'not valued' }}</dd>
+            <dt>Written as</dt><dd class="muted">“{{ r.logic.englishSource }}”</dd>
+          </dl>
+        </section>
+
+        <section class="card">
+          <div class="card-h"><h2>Response playbook</h2><span class="sub">added to every case this rule raises</span></div>
+          <ol class="small" style="margin:0;padding-left:18px;line-height:1.8" *ngIf="r.playbook?.length; else noPb"><li *ngFor="let s of r.playbook">{{ s }}</li></ol>
+          <ng-template #noPb><div class="faint small">No rule-level steps; the detector adds case-specific steps itself.</div></ng-template>
+        </section>
+
+        <section class="card">
+          <div class="card-h"><h2>Change history <app-info k="version"></app-info></h2><span class="sub">every proposal, review and toggle</span></div>
+          <div class="ver" *ngFor="let v of history">
+            <div class="vno">v{{ v.versionNo }}</div>
+            <div>
+              <div class="row wrap"><span class="chip xs" [ngClass]="verClass(v.status)">{{ v.status === 'PendingApproval' ? 'Pending approval' : v.status }}</span>
+                <span class="small">{{ v.author }}<ng-container *ngIf="v.reviewer && v.reviewer !== v.author"> → {{ v.reviewer }}</ng-container></span>
+                <span class="xs faint">{{ v.createdUtc | utcdate:'full' }}</span></div>
+              <div class="small mt8" *ngIf="v.changeNote">{{ v.changeNote }}</div>
+              <div class="xs muted" *ngIf="v.reviewNote">Review: {{ v.reviewNote }}</div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col" style="gap:16px">
+        <section class="card">
+          <div class="card-h"><h2>Track record</h2></div>
+          <div class="statgrid">
+            <div><b>{{ r.stats.open }}</b><span>open cases</span></div>
+            <div><b>{{ r.stats.last24h }}</b><span>raised in 24h</span></div>
+            <div><b>{{ r.stats.total }}</b><span>all-time</span></div>
+            <div><b>{{ r.stats.confirmed }}</b><span>confirmed fraud</span></div>
+            <div><b>{{ r.stats.falsePositive }}</b><span>false positives</span></div>
+            <div><b>{{ r.stats.benign }}</b><span>benign</span></div>
+          </div>
+          <div class="mt16">
+            <div class="row small"><b style="flex:1">Precision<app-info k="precision"></app-info></b><span class="mono">{{ pct(r.stats.precision) }}</span></div>
+            <div class="meter thick mt8"><i [style.width.%]="(r.stats.precision || 0) * 100" [style.background]="r.stats.precision >= .7 ? 'var(--good)' : r.stats.precision >= .4 ? 'var(--medium)' : 'var(--critical)'"></i></div>
+            <div class="explain">Share of analyst verdicts that were real fraud. Below 40% the rule is wasting analyst time — tighten it.</div>
+          </div>
+          <dl class="kv mt16 small">
+            <dt>Confirmed $</dt><dd><b>{{ r.stats.confirmedUsd | usd }}</b></dd>
+            <dt>Open $ at risk</dt><dd>{{ r.stats.openAtRiskUsd | usd }}</dd>
+            <dt>Last fired</dt><dd>{{ r.stats.lastFiredUtc ? (r.stats.lastFiredUtc | ago) : 'never' }}</dd>
+          </dl>
+        </section>
+        <section class="card">
+          <div class="card-h"><h2>Recent cases</h2></div>
+          <a *ngFor="let c of d.recentCases" [routerLink]="['/cases', c.caseId]" class="row" style="padding:8px 0;border-bottom:1px dashed var(--border);color:var(--text-1)">
+            <span class="sev" [ngClass]="sevClass(c.severity)" style="flex:none">{{ c.severity }}</span>
+            <span class="small ellipsis" style="flex:1">#{{ c.caseId }} {{ c.title }}</span>
+            <span class="disp" *ngIf="c.disposition" [ngClass]="c.disposition">{{ c.disposition === 'ConfirmedFraud' ? 'Fraud' : c.disposition === 'FalsePositive' ? 'FP' : 'Benign' }}</span>
+          </a>
+          <div class="faint small" *ngIf="!d.recentCases.length">No cases yet.</div>
+        </section>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<div class="backdrop" *ngIf="toggleModal" (click)="toggleModal = false">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-h"><h2>{{ r.enabled ? 'Disable' : 'Enable' }} “{{ r.name }}”</h2></div>
+    <div class="modal-b">
+      <div class="callout warn mb12" *ngIf="r.enabled">While disabled, this kind of fraud will not raise cases. The reason is kept in the rule's history.</div>
+      <label class="field">Reason {{ r.enabled ? '(required)' : '' }}<textarea [(ngModel)]="toggleNote" placeholder="e.g. Noisy during the campus enrolment week — re-enable Monday."></textarea></label>
+    </div>
+    <div class="modal-f"><button class="btn ghost" (click)="toggleModal = false">Cancel</button>
+      <button class="btn" [ngClass]="r.enabled ? 'danger' : 'primary'" (click)="doToggle()" [disabled]="busy || (r.enabled && !toggleNote.trim())">{{ r.enabled ? 'Disable' : 'Enable' }}</button></div>
+  </div>
+</div>
