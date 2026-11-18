@@ -308,9 +308,9 @@ public sealed class DemoSimulator
                 break;
         }
 
-        var created = await _worker.RunOnceAsync(ct, requestId);
-        var newCases = await NewCasesAsync(cn, beforeCaseId, ct);
-        return new SimulationResult(key, tag, created, injected, newCases);
+        var pass = await _worker.RunPassAsync($"simulation {key}", ct, requestId);
+        var newCases = pass.Changes.Select(o => new SimulatedCase(o.CaseId, o.Case.RuleId, o.Case.Severity.ToString(), (o.Kind == "Created" ? "" : o.Kind + ": ") + o.Case.Title)).ToList();
+        return new SimulationResult(key, tag, pass.Created, injected, newCases);
     }
 
     // ---------------------------------------------------------------- injectors

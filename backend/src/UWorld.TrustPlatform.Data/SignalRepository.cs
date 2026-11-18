@@ -54,8 +54,8 @@ public sealed class SignalRepository : ISignalRepository
             Deployments  = await ReadAsync(cn, ct, "SELECT DeploymentId, Service, Version, DeployedUtc FROM dbo.Deployments",
                 r => new DeploymentSignal(r.GetInt32(0), r.GetString(1), r.GetString(2), r.GetDateTime(3))),
 
-            Payments2    = await ReadAsync(cn, ct, "SELECT PaymentId, UserId, FinalAmount, TransactionAmount, DiscountAmount, TransactionId, PaymentStatus, GatewayId, PaymentModeId, SourceId, PaymentTypeId, IPAddress, CountryCode, DateCreated FROM dbo.USER_PAYMENTS",
-                r => new PaymentRecord(r.GetInt32(0), r.GetInt32(1), r.GetDecimal(2), r.GetDecimal(3), r.GetDecimal(4), r.IsDBNull(5)?null:r.GetString(5), r.GetByte(6), r.IsDBNull(7)?null:r.GetByte(7), r.GetByte(8), r.IsDBNull(9)?null:r.GetByte(9), r.IsDBNull(10)?null:r.GetByte(10), r.IsDBNull(11)?null:r.GetString(11), r.IsDBNull(12)?null:r.GetString(12), r.GetDateTime(13))),
+            Payments2    = await ReadAsync(cn, ct, "SELECT PaymentId, UserId, FinalAmount, TransactionAmount, DiscountAmount, TransactionId, PaymentStatus, GatewayId, PaymentModeId, SourceId, PaymentTypeId, IPAddress, CountryCode, DateCreated, CardFingerprint, CardLast4 FROM dbo.USER_PAYMENTS",
+                r => new PaymentRecord(r.GetInt32(0), r.GetInt32(1), r.GetDecimal(2), r.GetDecimal(3), r.GetDecimal(4), r.IsDBNull(5)?null:r.GetString(5), r.GetByte(6), r.IsDBNull(7)?null:r.GetByte(7), r.GetByte(8), r.IsDBNull(9)?null:r.GetByte(9), r.IsDBNull(10)?null:r.GetByte(10), r.IsDBNull(11)?null:r.GetString(11), r.IsDBNull(12)?null:r.GetString(12), r.GetDateTime(13), r.IsDBNull(14)?null:r.GetString(14), r.IsDBNull(15)?null:r.GetString(15))),
 
             BraintreeTxns = await ReadAsync(cn, ct, "SELECT TransactionId, PaymentId, TransactionStatus, Amount, IsMismatch, IsVerified, IsFraudDetected, DateCreated FROM dbo.BRAINTREE_TRANSACTIONS",
                 r => new BraintreeTxn(r.GetString(0), r.IsDBNull(1)?null:r.GetInt32(1), r.GetString(2), r.IsDBNull(3)?null:r.GetDecimal(3), r.GetBoolean(4), r.GetBoolean(5), r.GetBoolean(6), r.GetDateTime(7))),
@@ -83,6 +83,15 @@ public sealed class SignalRepository : ISignalRepository
 
             GaDiscounts  = await ReadAsync(cn, ct, "SELECT DiscountId, DiscountGroupId, PackageId, DiscountAmount, IsPercent, DiscountBehaviourTypeId, FloorValue FROM dbo.GA_DISCOUNTS",
                 r => new GaDiscount(r.GetInt32(0), r.GetInt32(1), r.GetInt16(2), r.GetDecimal(3), r.GetBoolean(4), r.GetByte(5), r.IsDBNull(6)?null:r.GetDecimal(6))),
+
+            Users        = await ReadAsync(cn, ct, "SELECT UserId, Email, FirstName, LastName, CountryCode, RegistrationIp, DeviceFingerprint, UserAgent, SignupSource, DateCreated FROM dbo.USERS",
+                r => new UserRecord(r.GetInt32(0), r.GetString(1), r.GetString(2), r.GetString(3), r.IsDBNull(4)?null:r.GetString(4), r.GetString(5), r.GetString(6), r.IsDBNull(7)?null:r.GetString(7), r.GetString(8), r.GetDateTime(9))),
+
+            ApiLogs      = await ReadAsync(cn, ct, "SELECT Id, RequestId, UserId, Email, Method, Endpoint, StatusCode, Outcome, IPAddress, CountryCode, UserAgent, DeviceFingerprint, DateCreated FROM dbo.API_LOGS WHERE DateCreated >= DATEADD(DAY, -30, SYSUTCDATETIME())",
+                r => new ApiLogRecord(r.GetInt64(0), r.GetString(1), r.IsDBNull(2)?null:r.GetInt32(2), r.IsDBNull(3)?null:r.GetString(3), r.GetString(4), r.GetString(5), r.GetInt32(6), r.GetString(7), r.GetString(8), r.IsDBNull(9)?null:r.GetString(9), r.IsDBNull(10)?null:r.GetString(10), r.IsDBNull(11)?null:r.GetString(11), r.GetDateTime(12))),
+
+            Packages     = await ReadAsync(cn, ct, "SELECT PackageId, Name, ListPrice, DurationDays, TrialDays FROM dbo.PACKAGES",
+                r => new PackageRecord(r.GetInt16(0), r.GetString(1), r.GetDecimal(2), r.GetInt32(3), r.GetInt32(4))),
         };
     }
 

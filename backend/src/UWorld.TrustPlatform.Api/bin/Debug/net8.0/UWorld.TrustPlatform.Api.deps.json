@@ -20,6 +20,19 @@
           "UWorld.TrustPlatform.Api.dll": {}
         }
       },
+      "Anthropic/13.9.0": {
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.5.1",
+          "System.Net.ServerSentEvents": "10.0.1",
+          "System.Text.Json": "10.0.6"
+        },
+        "runtime": {
+          "lib/net8.0/Anthropic.dll": {
+            "assemblyVersion": "13.9.0.0",
+            "fileVersion": "13.9.0.0"
+          }
+        }
+      },
       "Microsoft.AspNetCore.OpenApi/8.0.22": {
         "dependencies": {
           "Microsoft.OpenApi": "1.6.14"
@@ -150,6 +163,17 @@
             "rid": "win-x86",
             "assetType": "native",
             "fileVersion": "7.1.0.0"
+          }
+        }
+      },
+      "Microsoft.Extensions.AI.Abstractions/10.5.1": {
+        "dependencies": {
+          "System.Text.Json": "10.0.6"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Extensions.AI.Abstractions.dll": {
+            "assemblyVersion": "10.5.0.0",
+            "fileVersion": "10.500.126.25103"
           }
         }
       },
@@ -402,6 +426,22 @@
           }
         }
       },
+      "System.IO.Pipelines/10.0.6": {
+        "runtime": {
+          "lib/net8.0/System.IO.Pipelines.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.626.17701"
+          }
+        }
+      },
+      "System.Net.ServerSentEvents/10.0.1": {
+        "runtime": {
+          "lib/net8.0/System.Net.ServerSentEvents.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.125.57005"
+          }
+        }
+      },
       "System.Security.Cryptography.Pkcs/8.0.1": {
         "runtime": {
           "lib/net8.0/System.Security.Cryptography.Pkcs.dll": {
@@ -426,9 +466,39 @@
           }
         }
       },
+      "System.Text.Encodings.Web/10.0.6": {
+        "runtime": {
+          "lib/net8.0/System.Text.Encodings.Web.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.626.17701"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/browser/lib/net8.0/System.Text.Encodings.Web.dll": {
+            "rid": "browser",
+            "assetType": "runtime",
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.626.17701"
+          }
+        }
+      },
+      "System.Text.Json/10.0.6": {
+        "dependencies": {
+          "System.IO.Pipelines": "10.0.6",
+          "System.Text.Encodings.Web": "10.0.6"
+        },
+        "runtime": {
+          "lib/net8.0/System.Text.Json.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.626.17701"
+          }
+        }
+      },
       "System.Threading.RateLimiting/8.0.0": {},
       "UWorld.TrustPlatform.Ai/1.0.0": {
         "dependencies": {
+          "Anthropic": "13.9.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.2",
           "UWorld.TrustPlatform.Domain": "1.0.0"
         },
         "runtime": {
@@ -493,6 +563,13 @@
       "serviceable": false,
       "sha512": ""
     },
+    "Anthropic/13.9.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-+uQe8HT1ZHg6Vay+ICQLpj1y6pv7lPXasS0pPICiABZpx3rNaCh6+AxXuNP0zoxY0JEPPggQHCjD8PU4WemWTw==",
+      "path": "anthropic/13.9.0",
+      "hashPath": "anthropic.13.9.0.nupkg.sha512"
+    },
     "Microsoft.AspNetCore.OpenApi/8.0.22": {
       "type": "package",
       "serviceable": true,
@@ -534,6 +611,13 @@
       "sha512": "sha512-rWunOb6Dby0lcI82PohARcRbF+4x4wNKxnKRSHXhuwZMu8/cCS68DCfhceq4bv1gUEfoL5dWXHYnfxVvLQUN+Q==",
       "path": "microsoft.data.sqlclient.sni.runtime/7.1.0",
       "hashPath": "microsoft.data.sqlclient.sni.runtime.7.1.0.nupkg.sha512"
+    },
+    "Microsoft.Extensions.AI.Abstractions/10.5.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-nB0l3IlsVbNeUxsE7nZNb9GY8rP1OSeqpj0pseORPejt474HNKEauTWTLdSJPkSvPlRMxowZNMo6nyp7APAiSg==",
+      "path": "microsoft.extensions.ai.abstractions/10.5.1",
+      "hashPath": "microsoft.extensions.ai.abstractions.10.5.1.nupkg.sha512"
     },
     "Microsoft.Extensions.ApiDescription.Server/6.0.5": {
       "type": "package",
@@ -717,6 +801,20 @@
       "path": "system.identitymodel.tokens.jwt/8.16.0",
       "hashPath": "system.identitymodel.tokens.jwt.8.16.0.nupkg.sha512"
     },
+    "System.IO.Pipelines/10.0.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-98dV8iAMdOzlB7iZ8OOJ3Wj/LNMV+x2c0DCM4EyFEz/kEVmB1+49HwnocY703amF2BguoZZXk4t3lPSfbcHOgA==",
+      "path": "system.io.pipelines/10.0.6",
+      "hashPath": "system.io.pipelines.10.0.6.nupkg.sha512"
+    },
+    "System.Net.ServerSentEvents/10.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-JFvLk6SHowCHY2fsCIyF/Adp1eM9JY3kF3Vf/t1FrN7mDe6f5/MEvKybRtvayq/JmymZbPxAEKeLvEbiRIYnew==",
+      "path": "system.net.serversentevents/10.0.1",
+      "hashPath": "system.net.serversentevents.10.0.1.nupkg.sha512"
+    },
     "System.Security.Cryptography.Pkcs/8.0.1": {
       "type": "package",
       "serviceable": true,
@@ -730,6 +828,20 @@
       "sha512": "sha512-+TUFINV2q2ifyXauQXRwy4CiBhqvDEDZeVJU7qfxya4aRYOKzVBpN+4acx25VcPB9ywUN6C0n8drWl110PhZEg==",
       "path": "system.security.cryptography.protecteddata/8.0.0",
       "hashPath": "system.security.cryptography.protecteddata.8.0.0.nupkg.sha512"
+    },
+    "System.Text.Encodings.Web/10.0.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-o7zWD39jHesxpHyMSWAf+CjM+NaEIV49IJ8tasAsnaVkRcLP33+5aobgxeKLJRLQQfeciO7BbW5vXCUMzPoU6w==",
+      "path": "system.text.encodings.web/10.0.6",
+      "hashPath": "system.text.encodings.web.10.0.6.nupkg.sha512"
+    },
+    "System.Text.Json/10.0.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-eU/JSsGWpQPE+rkBJjFjsmtaPsu1kCLqFYeW3NS715+z/dP2/BsCl6R7BFGcjhg+rm5WHblllC3p7QS+sS3HtA==",
+      "path": "system.text.json/10.0.6",
+      "hashPath": "system.text.json.10.0.6.nupkg.sha512"
     },
     "System.Threading.RateLimiting/8.0.0": {
       "type": "package",

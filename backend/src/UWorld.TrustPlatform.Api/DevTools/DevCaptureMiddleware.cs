@@ -18,7 +18,7 @@ namespace UWorld.TrustPlatform.Api.DevTools;
 public sealed class DevCaptureMiddleware
 {
     private const int MaxBodyChars = 64 * 1024;
-    private static readonly string[] KeptRequestHeaders = { "X-Role", "X-Request-Id", "Content-Type", "Accept", "Origin", "Referer", "User-Agent" };
+    private static readonly string[] KeptRequestHeaders = { "X-User", "X-Role", "X-Request-Id", "X-Sim-Ip", "X-Sim-Device", "Content-Type", "Accept", "Origin", "Referer", "User-Agent" };
     private static readonly string[] KeptResponseHeaders = { "Content-Type", "X-Request-Id", "Location" };
 
     private readonly RequestDelegate _next;

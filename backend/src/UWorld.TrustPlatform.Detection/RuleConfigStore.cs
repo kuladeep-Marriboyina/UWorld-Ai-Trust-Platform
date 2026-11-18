@@ -19,6 +19,22 @@ public sealed class RuleConfigStore
     public RuleConfigEntry? Get(string ruleId) => _map.TryGetValue(ruleId, out var e) ? e : null;
     public bool Enabled(string ruleId) => !_map.TryGetValue(ruleId, out var e) || e.Enabled;
 
+    /// <summary>Unknown rules run (safe default for new coded rules); known rules run only when Active + Enabled.</summary>
+    public bool IsLive(string ruleId) => !_map.TryGetValue(ruleId, out var e) || e.IsLive;
+
+    /// <summary>A copy with one rule's parameters replaced — used to dry-run a proposed threshold change.</summary>
+    public RuleConfigStore WithOverride(string ruleId, string? configJson)
+    {
+        var copy = new RuleConfigStore();
+        var entries = _map.Values.Select(e => e.RuleId.Equals(ruleId, StringComparison.OrdinalIgnoreCase)
+            ? new RuleConfigEntry { RuleId = e.RuleId, Enabled = true, Status = RuleStatus.Active, ConfigJson = configJson, PlaybookJson = e.PlaybookJson }
+            : e).ToList();
+        if (!entries.Any(e => e.RuleId.Equals(ruleId, StringComparison.OrdinalIgnoreCase)))
+            entries.Add(new RuleConfigEntry { RuleId = ruleId, ConfigJson = configJson });
+        copy.Reload(entries);
+        return copy;
+    }
+
     public double Num(string ruleId, string key, double fallback)
     {
         var json = Get(ruleId)?.ConfigJson;
