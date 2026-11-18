@@ -12,42 +12,62 @@ public sealed class DemoController : ControllerBase
     private readonly DemoSimulator _simulator;
     private readonly IngestionWorker _worker;
     private readonly INewRelicClient _telemetry;
+    private readonly DemoResetService _reset;
+    private readonly RuleConfigLoader _loader;
+    private readonly LiveEventHub _hub;
 
-    public DemoController(DemoSimulator simulator, IngestionWorker worker, INewRelicClient telemetry)
+    public DemoController(DemoSimulator simulator, IngestionWorker worker, INewRelicClient telemetry, DemoResetService reset, RuleConfigLoader loader, LiveEventHub hub)
     {
         _simulator = simulator;
         _worker = worker;
         _telemetry = telemetry;
+        _reset = reset;
+        _loader = loader;
+        _hub = hub;
     }
 
-    /// <summary>Inject a fresh anomaly and run one ingestion pass so a case appears live.</summary>
-    [HttpPost("simulate")]
-    [RequireRole("Analyst", "Lead")]
-    public async Task<SimulationResult> Simulate(CancellationToken ct)
-        => await _simulator.SimulateAuthorizationGapAsync(RequestId(), ct);
-
-    /// <summary>Attack families and their bypass variants, for the Simulate menu.</summary>
+    /// <summary>Data-level attack families (payment, discount, region, access) and their bypass variants.</summary>
     [HttpGet("scenarios")]
     public IReadOnlyList<ScenarioGroup> Scenarios() => DemoSimulator.Catalog;
 
-    /// <summary>Fire a specific bypass variant live (see GET scenarios); legacy family keys still work.</summary>
     [HttpPost("simulate/{scenario}")]
-    [RequireRole("Analyst", "Lead")]
+    [RequireRole(Roles.Analyst, Roles.RuleAuthor, Roles.Admin)]
     public async Task<ActionResult<SimulationResult>> SimulateScenario(string scenario, CancellationToken ct)
     {
-        try { return await _simulator.SimulateScenarioAsync(scenario, RequestId(), ct); }
+        try
+        {
+            var result = await _simulator.SimulateScenarioAsync(scenario, HttpContext.RequestId(), ct);
+            _hub.Publish("simulation", "info", $"Simulation injected: {scenario}", $"{result.Injected.Count} rows written · {result.CasesCreated} case(s) raised");
+            return result;
+        }
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
-    /// <summary>Run one ingestion pass on demand (idempotent).</summary>
+    /// <summary>Run one detection pass on demand.</summary>
     [HttpPost("run")]
-    [RequireRole("Analyst", "Lead")]
+    [RequireRole(Roles.Analyst, Roles.RuleAuthor, Roles.Admin)]
     public async Task<object> Run(CancellationToken ct)
-        => new { casesCreated = await _worker.RunOnceAsync(ct, RequestId()) };
+    {
+        var pass = await _worker.RunPassAsync("manual run", ct, HttpContext.RequestId());
+        return new { casesCreated = pass.Created, casesUpdated = pass.Updated, pass.DurationMs, pass.RowsEvaluated };
+    }
 
-    /// <summary>The platform's own telemetry (self-observability through the mock New Relic client).</summary>
+    /// <summary>Restore the seeded baseline (history, campus cohort, one historical farm) and re-run detection.</summary>
+    [HttpPost("reset")]
+    [RequireRole(Roles.Admin)]
+    public async Task<ActionResult<object>> Reset(CancellationToken ct)
+    {
+        try
+        {
+            var scripts = await _reset.ResetAsync(ct);
+            await _loader.ReloadAsync(ct);
+            var pass = await _worker.RunPassAsync("demo reset", ct, HttpContext.RequestId());
+            _hub.Publish("system", "info", "Demo data reset to baseline", $"{pass.Created} case(s) raised on backfill");
+            return new { scripts, casesRaised = pass.Created };
+        }
+        catch (Exception ex) { return StatusCode(500, new { error = ex.Message }); }
+    }
+
     [HttpGet("telemetry")]
     public IReadOnlyList<TelemetryEvent> Telemetry([FromQuery] int take = 25) => _telemetry.Recent(take);
-
-    private string RequestId() => HttpContext.Items[Security.RequestTracingMiddleware.ItemKey] as string ?? "req-adhoc";
 }

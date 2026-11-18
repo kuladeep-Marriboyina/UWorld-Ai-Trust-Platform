@@ -1,5 +1,7 @@
 import { Component, HostListener, OnInit } from '@angular/core';
-import { ApiService } from './api.service';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs/operators';
+import { SCENARIOS, Scenario } from './lab/simulation';
 
 @Component({
   selector: 'app-root',
@@ -7,58 +9,40 @@ import { ApiService } from './api.service';
 })
 export class AppComponent implements OnInit {
   menuOpen = false;
-  groups: any[] = [];
+  attacks = SCENARIOS.filter(s => s.kind === 'attack');
+  legit = SCENARIOS.filter(s => s.kind === 'legit');
 
-  // popup state
-  group: any = null;       // attack family open in the popup
-  variant: any = null;     // selected bypass variant
-  busy = false;
-  runs: any[] = [];        // results for this popup session (newest first)
-  error = '';
+  /** True on the customer storefront (/store), which renders without the analyst console chrome. */
+  bare = location.pathname.startsWith('/store');
+  onLab = location.pathname.startsWith('/lab');
 
-  constructor(public api: ApiService) {}
+  constructor(private router: Router) {}
 
   ngOnInit(): void {
-    this.api.scenarios().subscribe(g => this.groups = g, () => this.error = 'Could not load scenarios — is the API running on :5080?');
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => {
+      const url: string = e.urlAfterRedirects || e.url;
+      this.bare = url.startsWith('/store');
+      this.onLab = url.startsWith('/lab');
+    });
   }
 
-  open(g: any): void {
+  /** Open the Simulation Lab with this live scenario loaded, ready to run. */
+  openScenario(s: Scenario): void {
     this.menuOpen = false;
-    this.group = g;
-    this.variant = g.variants[0];
-    this.runs = [];
-    this.error = '';
+    this.router.navigate(['/lab'], { queryParams: { scenario: s.key } });
   }
 
-  close(): void {
-    if (this.busy) { return; }
-    this.group = null; this.variant = null; this.runs = [];
+  /** The storefront is the customer's site: open it in its own window (several windows = several "devices"). */
+  openStore(ev: Event): void {
+    ev.preventDefault();
+    window.open('/store', '_blank', 'width=1180,height=900');
   }
 
-  run(v: any): void {
-    this.busy = true; this.error = '';
-    this.api.simulate(v.key).subscribe(
-      (r: any) => { this.runs.unshift({ variant: v, result: r }); this.busy = false; },
-      (e: any) => { this.error = v.label + ' failed: ' + (e.error?.error || e.message); this.busy = false; }
-    );
-  }
-
-  /** Fire every variant of the family one after another. */
-  runAll(): void {
-    const queue = [...this.group.variants];
-    const next = () => {
-      const v = queue.shift();
-      if (!v) { this.busy = false; return; }
-      this.variant = v;
-      this.api.simulate(v.key).subscribe(
-        (r: any) => { this.runs.unshift({ variant: v, result: r }); next(); },
-        (e: any) => { this.error = v.label + ' failed: ' + (e.error?.error || e.message); this.busy = false; }
-      );
-    };
-    this.busy = true; this.error = '';
-    next();
+  @HostListener('document:click', ['$event'])
+  onDocClick(e: MouseEvent): void {
+    if (this.menuOpen && !(e.target as HTMLElement).closest('.dropdown')) { this.menuOpen = false; }
   }
 
   @HostListener('document:keydown.escape')
-  onEsc(): void { this.menuOpen = false; this.close(); }
+  onEsc(): void { this.menuOpen = false; }
 }

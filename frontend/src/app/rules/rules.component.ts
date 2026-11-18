@@ -14,39 +14,9 @@ export class RulesComponent implements OnInit {
   filterCat = 'all';
   showAuthor = false;
 
-  // NL authoring
-  text = '';
-  result: any;
-  answers: any = {};
-  busy = false;
-  activated = '';
-
-  severities = ['Low', 'Medium', 'High', 'Critical'];
-  browseOpen = false;
-
-  examples = [
-    'Flag any order that shows as paid but has no Braintree transaction, over $50, excluding free trials',
-    'Flag any payment over $500',
-    'Flag a discount code used more than 40 times',
-    'Flag access from Iran'
-  ];
-
-  templates = [
-    { group: 'Payments', icon: '💳', items: ['Flag any payment over $500', 'Flag paid orders with no Braintree transaction over $50, excluding free trials'] },
-    { group: 'Discounts', icon: '🏷️', items: ['Flag a discount code used more than 40 times', 'Flag an expired discount code'] },
-    { group: 'Access & region', icon: '🌍', items: ['Flag access from Iran', 'Flag access from a blocked IP'] }
-  ];
-
-  get step(): 'describe' | 'review' { return this.result ? 'review' : 'describe'; }
-
-  get catalogTables(): { table: string; fields: any[] }[] {
-    if (!this.catalog || !this.catalog.fields) { return []; }
-    const map: { [k: string]: any[] } = {};
-    this.catalog.fields.forEach((f: any) => { (map[f.table] = map[f.table] || []).push(f); });
-    return Object.keys(map).map(table => ({ table, fields: map[table] }));
-  }
-
-  insertPhrase(syn: string): void { this.text = (this.text ? this.text.trim() + ' ' : '') + syn; }
+  // add / edit
+  formRule: any = null;     // rule being edited in the right panel; null = new rule
+  activated = '';           // success message after a save
 
   /** What each built-in rule actually checks — shown when you read a rule. */
   logic: { [k: string]: { summary: string; checks: string[] } } = {
@@ -179,30 +149,23 @@ export class RulesComponent implements OnInit {
     try { return JSON.parse(r.declarativeJson); } catch { return null; }
   }
 
-  // ---- add a rule (NL authoring) ----
-  openAuthor(): void { this.showAuthor = true; this.result = null; this.text = ''; this.answers = {}; this.activated = ''; this.browseOpen = false; }
+  // ---- add / edit a rule ----
+  openAuthor(): void { this.openForm(null); }
+  openEdit(r: any): void { this.openForm(r); }
 
-  back(): void { this.result = null; }
-
-  use(ex: string): void { this.text = ex; this.answers = {}; this.result = null; this.interpret(); }
-
-  interpret(): void {
-    this.busy = true; this.activated = '';
-    this.api.author(this.text, this.answers).subscribe(res => { this.result = res; this.busy = false; }, () => this.busy = false);
+  /** Re-create the form each time so switching between "add" and "edit X" never shows stale values. */
+  private openForm(r: any): void {
+    this.showAuthor = false; this.activated = '';
+    setTimeout(() => { this.formRule = r; this.showAuthor = true; });
   }
 
-  keyOf(q: string): string { const m = q.match(/'([a-zA-Z]+)'/); return m ? m[1] : ''; }
-
-  activate(): void {
-    // scope the new rule to the selected category when one is chosen
-    if (this.selected && this.result && this.result.proposedRule) {
-      this.result.proposedRule.category = this.selected.category || this.result.proposedRule.category;
-    }
-    this.api.confirmRule(this.result.proposedRule).subscribe((r: any) => {
-      this.activated = r.activated;
-      this.result = null; this.text = ''; this.answers = {}; this.showAuthor = false;
-      this.loadRules();
-      this.api.run().subscribe();
+  onSaved(r: any): void {
+    this.showAuthor = false;
+    this.activated = `Saved v${r.version} of ${r.ruleId} — live now; it will raise cases on the next pass.`;
+    this.api.rules().subscribe(list => {
+      this.rules = list;
+      this.selected = list.find(x => x.ruleId === r.ruleId) || null;
     });
+    this.api.run().subscribe(() => {}, () => {});
   }
 }

@@ -1,28 +1,35 @@
-<h1>Risk cases</h1>
-<div class="row" style="margin:10px 0 14px">
-  <select [(ngModel)]="filterRule" (change)="load()" style="width:auto">
+<div class="cs-head">
+  <h1>Risk cases</h1>
+  <button class="btn ghost sm" (click)="load()" [disabled]="loading">{{ loading ? 'Refreshing…' : '↻ Refresh' }}</button>
+</div>
+
+<div class="cs-bar">
+  <input class="cs-search" [(ngModel)]="search" placeholder="Search case #, title, IP, email…" aria-label="Search cases" />
+  <select [(ngModel)]="filterRule" aria-label="Rule">
     <option value="">All rules</option>
-    <option *ngFor="let r of rules" [value]="r">{{ r }}</option>
+    <option *ngFor="let r of rules" [value]="r.id">{{ r.name }}</option>
   </select>
-  <select [(ngModel)]="filterSeverity" (change)="load()" style="width:auto">
+  <select [(ngModel)]="filterSeverity" aria-label="Severity">
     <option value="">All severities</option>
-    <option value="Critical">Critical</option>
-    <option value="High">High</option>
-    <option value="Medium">Medium</option>
-    <option value="Low">Low</option>
+    <option *ngFor="let s of severities" [value]="s">{{ s }}</option>
   </select>
-  <span class="muted">{{ cases.length }} cases</span>
+  <select [(ngModel)]="filterStatus" aria-label="Status">
+    <option value="">All statuses</option>
+    <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+  </select>
+  <span class="muted cs-count">{{ filtered.length }} of {{ all.length }}</span>
+  <a href="" class="cs-clear" *ngIf="hasFilters" (click)="$event.preventDefault(); clear()">Clear</a>
 </div>
 
 <div class="card">
   <table>
     <thead><tr><th>#</th><th>Severity</th><th class="num">Score</th><th>Rule</th><th>Title</th><th class="num">$ at risk</th><th>Status</th></tr></thead>
     <tbody>
-      <tr class="clickable" *ngFor="let c of cases" [routerLink]="['/cases', c.caseId]">
+      <tr class="clickable" *ngFor="let c of filtered" [routerLink]="['/cases', c.caseId]">
         <td class="mono">{{ c.caseId }}</td>
         <td><span class="sev {{ c.severity | lowercase }}">{{ c.severity }}</span></td>
         <td class="num">{{ c.score }}</td>
-        <td><span class="chip">{{ c.ruleId }}</span></td>
+        <td><span class="chip" [title]="c.ruleId">{{ ruleName(c.ruleId) }}</span></td>
         <td>{{ c.title }}</td>
         <td class="num">
           <span class="popover">${{ c.businessImpactUsd | number:'1.0-0' }}<span class="infoic" (click)="toggleImpact(c.caseId, $event)" title="How is this at risk?">i</span>
@@ -35,6 +42,13 @@
           </span>
         </td>
         <td><span class="pill {{ c.status | lowercase }}">{{ c.status }}</span></td>
+      </tr>
+      <tr *ngIf="!filtered.length">
+        <td colspan="7" class="cs-empty">
+          <ng-container *ngIf="loading">Loading cases…</ng-container>
+          <ng-container *ngIf="!loading && hasFilters">No cases match these filters. <a href="" (click)="$event.preventDefault(); clear()">Clear filters</a></ng-container>
+          <ng-container *ngIf="!loading && !hasFilters">No cases yet — run a scenario from the Simulation Lab menu.</ng-container>
+        </td>
       </tr>
     </tbody>
   </table>

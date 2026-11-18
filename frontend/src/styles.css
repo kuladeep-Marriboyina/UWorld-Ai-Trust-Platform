@@ -7,7 +7,7 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
 a{color:var(--brand);text-decoration:none}
-main{max-width:1200px;margin:0 auto;padding:22px}
+main{max-width:1300px;margin:0 auto;padding:22px}
 h1{font-size:22px;margin:0 0 4px}
 h2{font-size:17px;margin:22px 0 10px}
 .muted{color:var(--muted)}
@@ -35,8 +35,8 @@ h2{font-size:17px;margin:22px 0 10px}
 .btn-sim:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.45)}
 .btn-sim.open{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45)}
 .btn-sim:disabled{opacity:.55;cursor:default}
-.menu{position:absolute;right:0;top:40px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;min-width:210px}
-.menu.wide{width:300px}
+.menu{position:absolute;right:0;top:35px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;min-width:210px}
+.menu.wide{width:50px}
 .menu .menuhdr{padding:9px 14px;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#f6f9fe;border-bottom:1px solid var(--line)}
 .menu .menuerr{padding:12px 14px;font-size:13px;color:var(--muted)}
 .menu .menuitem{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:none;background:#fff;padding:11px 14px;cursor:pointer;color:var(--ink);border-bottom:1px solid var(--line)}
@@ -155,6 +155,11 @@ h2{font-size:17px;margin:22px 0 10px}
 .tile .v{font-size:26px;font-weight:700;color:var(--brand-2)}
 .tile .l{font-size:12.5px;color:var(--muted);margin-top:2px}
 @media(max-width:820px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tiles.six{grid-template-columns:repeat(6,1fr)}
+.tiles.six .tile .v{font-size:23px}
+.tile .v.ok{color:var(--ok)}
+@media(max-width:1100px){.tiles.six{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:620px){.tiles.six{grid-template-columns:repeat(2,1fr)}}
 
 /* cards + grid */
 .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
@@ -194,6 +199,8 @@ textarea{min-height:70px;resize:vertical}
 .alert{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
 .alert:last-child{border-bottom:none}
 .alert .t{font-size:13.5px}
+.alerts-scroll{max-height:420px;overflow-y:auto;padding-right:6px;margin-right:-6px}
+.alerts-scroll h2{position:sticky;top:0;background:var(--card);margin:14px 0 6px;padding:4px 0;z-index:1}
 .diff{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
 .diff div{border-radius:9px;padding:9px 12px;font-size:13px}
 .diff .exp{background:#eef4ff;border:1px solid #cfe0ff;color:#123a7a}
@@ -411,3 +418,117 @@ pre.stack{max-height:260px;color:#f5c2bd}
 .code-l .lc{padding-right:12px}
 .code-l.hl{background:#5a1d1a}
 .code-l.hl .ln{color:#ffb4ab;font-weight:700}
+
+/* ---------- fixed-height scrolling table (dashboard: top active subscriptions) ---------- */
+.scroll-box{height:420px;overflow-y:auto;margin:0 -6px;padding:0 6px;scrollbar-width:thin;scrollbar-color:#c7d3e6 transparent}
+.scroll-box::-webkit-scrollbar,.alerts-scroll::-webkit-scrollbar{width:8px}
+.scroll-box::-webkit-scrollbar-thumb,.alerts-scroll::-webkit-scrollbar-thumb{background:#c7d3e6;border-radius:8px}
+.alerts-scroll{scrollbar-width:thin;scrollbar-color:#c7d3e6 transparent}
+table.sticky-head thead th{position:sticky;top:0;background:var(--card);z-index:1;box-shadow:inset 0 -1px 0 var(--line)}
+
+/* ---------- compact pill toggle (1h / 5h / 24h) ---------- */
+.wtoggle{position:relative;display:inline-flex;padding:3px;background:#eef2f8;border:1px solid var(--line);border-radius:999px;isolation:isolate}
+.wtoggle button{position:relative;z-index:1;width:40px;border:0;background:transparent;color:var(--muted);font:600 11.5px/1 "Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:5px 0;border-radius:999px;cursor:pointer;transition:color .3s ease}
+.wtoggle button:hover{color:var(--brand-2)}
+.wtoggle button.on{color:#fff}
+/* the sliding highlight: one pill that glides to the selected option */
+.wt-thumb{position:absolute;z-index:0;top:3px;bottom:3px;left:3px;width:40px;border-radius:999px;background:linear-gradient(135deg,var(--brand),#2f7bff);box-shadow:0 2px 6px rgba(11,95,255,.28);transition:transform .38s cubic-bezier(.34,1.32,.64,1),box-shadow .3s ease;will-change:transform}
+.wtoggle:active .wt-thumb{box-shadow:0 1px 3px rgba(11,95,255,.35)}
+/* soft fade of the list while the new window loads */
+.scroll-box table tbody{transition:opacity .25s ease}
+.scroll-box.loading table tbody{opacity:.35}
+@media (prefers-reduced-motion: reduce){.wt-thumb,.wtoggle button,.scroll-box table tbody{transition:none}}
+
+/* ---------- Simulation Lab menu (top bar) ---------- */
+.btn-sim.here{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45)}
+.menu.wide{width:360px;max-height:calc(100vh - 80px);overflow-y:auto}
+.menu .mt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;margin-top:1px}
+.menu .menufoot{display:block;padding:10px 14px;font-size:13px;font-weight:600;color:var(--brand);background:#f6f9fe;border-top:1px solid var(--line);text-align:center}
+.menu .menufoot:hover{background:#eaf1ff}
+
+/* ---------- Cases: header + one-line filter bar ---------- */
+.cs-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.cs-head h1{margin:0}
+.cs-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.cs-bar input,.cs-bar select{width:auto;height:34px;padding:0 10px;font-size:13px;border-radius:8px;background:#fff}
+.cs-bar input:focus,.cs-bar select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(11,95,255,.1)}
+.cs-bar .cs-search{flex:1;min-width:220px;max-width:340px}
+.cs-bar select{cursor:pointer}
+.cs-count{font-size:12.5px;margin-left:auto}
+.cs-clear{font-size:12.5px;font-weight:600}
+.cs-empty{text-align:center;color:var(--muted);padding:28px 10px !important}
+
+/* ---------- Case detail: calmer colours (same palette, less fill) ---------- */
+.cd-head{border-top-width:3px}
+.cd .st{background:#fafbfd}
+.cd .st-v,.cd .st-v.money{color:var(--ink)}
+.cd .bar > i{background:var(--brand);opacity:.8}
+.cmp > div{background:#fafbfd;border:1px solid var(--line);color:var(--ink);border-left-width:3px}
+.cmp .cmp-exp{border-left-color:var(--ok)}
+.cmp .cmp-act{border-left-color:var(--crit)}
+.cmp-exp .cmp-l{color:#1f7a4a;opacity:1}
+.cmp-act .cmp-l{color:#a8321f;opacity:1}
+.cd .tl-dot{border-color:#9db7e6}
+.cd .tl-c{background:#fafbfd}
+.ai .q{background:#fafbfd;border:1px solid var(--line);border-left:3px solid var(--med);color:var(--ink-2)}
+
+/* header action bar */
+.cd-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.cd-spacer{flex:1}
+
+/* collapsible card (evidence timeline) — collapsed by default */
+.collapsible > summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;user-select:none}
+.collapsible > summary::-webkit-details-marker{display:none}
+.collapsible > summary h2{margin:0;display:flex;align-items:center;gap:8px}
+.collapsible > summary h2::before{content:"▸";color:var(--brand);font-size:13px;transition:transform .18s ease;display:inline-block}
+.collapsible[open] > summary h2::before{transform:rotate(90deg)}
+.collapsible[open] > summary{margin-bottom:12px}
+.coll-hint{font-size:12px}
+.collapsible[open] .coll-hint{font-size:0}
+.collapsible[open] .coll-hint::after{content:"Hide";font-size:12px}
+
+/* generate-report modal */
+.rp-modal{max-width:760px}
+.rpt-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 22px 0}
+.rpt-tabs button,.rpt-tabs .wt-thumb{width:110px}
+.rpt-check{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-2);cursor:pointer}
+.rpt-check input{width:auto;margin:0}
+.rpt-body{padding:12px 22px}
+.rpt-loading{font-size:13px;padding:24px 0;text-align:center}
+.rpt-text{margin:0;max-height:52vh;overflow:auto;background:#fafbfd;border:1px solid var(--line);border-radius:10px;padding:14px 16px;font:12.5px/1.6 "Cascadia Code",Consolas,monospace;color:var(--ink);white-space:pre-wrap;word-break:break-word}
+.rpt-foot{display:flex;align-items:center;gap:8px;padding:12px 22px 16px;border-top:1px solid var(--line)}
+.rpt-ok{font-size:12.5px;font-weight:600;color:var(--ok)}
+
+/* ---------- Rules Portal: add / edit form (same look as the classic wizard) ---------- */
+.rf-sec{padding:14px 0;border-bottom:1px dashed var(--line)}
+.rf-sec:last-child{border-bottom:0}
+.rf-sec .wiz-l{display:flex;align-items:center;gap:8px;margin-top:0}
+.rf-n{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:700;letter-spacing:0;flex:none}
+.rf-n.sm{width:18px;height:18px;font-size:10px;background:#e3ecfb;color:var(--brand-2)}
+.rf-hint{font-size:11.5px;font-weight:400;text-transform:none;letter-spacing:0}
+.rf-sentence{background:#f6f9fe;border:1px solid #d6e2f7;border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--brand-2);margin-bottom:12px}
+.rf-cond{display:grid;grid-template-columns:minmax(0,1.3fr) 130px minmax(0,1fr) 28px;gap:6px;align-items:center;margin-bottom:6px}
+.rf-cond select,.rf-cond input{height:34px;padding:0 8px;font-size:13px}
+.rf-note{grid-column:1 / -1;font-size:11.5px;color:var(--muted);margin:-2px 0 2px}
+.rf-x{border:0;background:#eef2f8;color:var(--muted);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:11px}
+.rf-x:hover{background:#ffecec;color:var(--crit)}
+.rf-seg{display:inline-flex;flex-wrap:wrap}
+.rf-seg button{font-size:12.5px;padding:6px 12px}
+.rf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}
+.rf-field{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.rf-field input,.rf-field select,.rf-field textarea{font-weight:400;font-size:13px}
+.rf-field textarea{min-height:56px}
+.rf-param{display:flex;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.rf-param:last-child{border-bottom:0}
+.rf-pin{display:flex;flex-direction:column;align-items:flex-end;gap:3px;width:200px}
+.rf-pin input{height:32px;font-size:13px}
+.rf-step{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.rf-step input{height:34px;font-size:13px}
+.rf-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:8px}
+.rf-stats > div{background:#f7f9fd;border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+.rf-stats b{display:block;font-size:19px;color:var(--brand-2)}
+.rf-stats span{font-size:11.5px;color:var(--muted)}
+.rf-checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:10px}
+.rf-chk{font-size:12.5px;color:var(--muted)}
+.rf-chk.ok{color:var(--ok);font-weight:600}
+.rf-save .wiz-cta{margin-top:12px}

@@ -33,7 +33,8 @@ public sealed class RequestTracingMiddleware
         finally
         {
             sw.Stop();
-            if (context.Request.Path.StartsWithSegments("/api"))
+            if (context.Request.Path.StartsWithSegments("/api") && !context.Request.Path.StartsWithSegments("/api/live")
+                && !(HttpMethods.IsGet(context.Request.Method) && context.Request.Path.StartsWithSegments("/api/dashboard")))
             {
                 var ledger = context.RequestServices.GetService<IUsageLedger>();
                 if (ledger is not null)

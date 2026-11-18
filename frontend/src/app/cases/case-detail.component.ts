@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../api.service';
 import { impactExplain, ImpactInfo } from '../impact';
@@ -13,6 +13,46 @@ export class CaseDetailComponent implements OnInit {
   ai: any;
   aiBusy = false;
   showImpact = false;
+
+  // ---- report ----
+  reportOpen = false;
+  report: any = null;          // { markdown, chat }
+  reportError = '';
+  reportTab: 'md' | 'chat' = 'md';
+  redact = false;
+  reportCopied = '';
+
+
+  openReport(): void { this.reportOpen = true; this.loadReport(); }
+
+  loadReport(): void {
+    this.report = null; this.reportError = ''; this.reportCopied = '';
+    this.api.report(this.id, this.redact, `${location.origin}/cases/${this.id}`)
+      .subscribe(r => this.report = r, e => this.reportError = e.error?.error || 'Could not build the report.');
+  }
+
+  closeReport(): void {
+    this.reportOpen = false;
+    this.load();   // the export is recorded in the audit trail
+  }
+
+  get reportText(): string { return this.report ? (this.reportTab === 'md' ? this.report.markdown : this.report.chat) : ''; }
+
+  copyReport(): void {
+    navigator.clipboard.writeText(this.reportText).then(() => {
+      this.reportCopied = this.reportTab === 'md' ? 'Report copied' : 'Summary copied';
+      setTimeout(() => this.reportCopied = '', 1800);
+    });
+  }
+
+  downloadReport(): void {
+    const blob = new Blob([this.report.markdown], { type: 'text/markdown' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `case-${this.id}${this.redact ? '-redacted' : ''}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
 
   get impact(): ImpactInfo { return impactExplain(this.case ? this.case.ruleId : ''); }
 
@@ -87,10 +127,17 @@ export class CaseDetailComponent implements OnInit {
 
   summarise(): void {
     this.aiBusy = true;
-    this.api.aiSummary(this.id).subscribe(a => { this.ai = a; this.aiBusy = false; }, () => this.aiBusy = false);
+    this.api.aiSummary(this.id).subscribe(a => {
+      // the copilot now returns keyFindings / recommendedActions; this view reads whyFlagged / recommendedChecks
+      this.ai = { ...a, whyFlagged: a.whyFlagged || a.keyFindings || [], recommendedChecks: a.recommendedChecks || a.recommendedActions || [] };
+      this.aiBusy = false;
+    }, () => this.aiBusy = false);
   }
 
   assign(): void { this.api.assign(this.id, 'kuladeep').subscribe(() => this.load()); }
   escalate(): void { this.api.escalate(this.id, 'Escalated from workspace').subscribe(() => this.load()); }
   resolve(): void { this.api.resolve(this.id, 'Reviewed and resolved').subscribe(() => this.load()); }
+
+  @HostListener('document:keydown.escape')
+  onEsc(): void { if (this.reportOpen) { this.closeReport(); } }
 }

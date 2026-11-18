@@ -1,0 +1,189 @@
+<div class="wiz">
+  <div class="wiz-head">
+    <div class="wiz-ic">{{ mode === 'new' ? '✨' : '✎' }}</div>
+    <div class="wiz-ht">
+      <div class="wiz-title">
+        <ng-container *ngIf="mode === 'new'">Add a rule<span *ngIf="newCategory" class="wiz-scope"> · {{ newCategory }}</span></ng-container>
+        <ng-container *ngIf="mode !== 'new'">Edit · {{ rule.name || rule.ruleId }}</ng-container>
+      </div>
+      <div class="wiz-sub" *ngIf="mode === 'new'">Describe it in plain English and let the AI map it to real tables and columns — or build it directly. Dry-run it against live data, then save.</div>
+      <div class="wiz-sub" *ngIf="mode === 'coded'">A built-in detector: its logic is versioned code. Tune its parameters, severity and response playbook here.</div>
+      <div class="wiz-sub" *ngIf="mode === 'authored'">Edit this rule's logic and details. Saving creates a new version; the previous one stays in the history.</div>
+    </div>
+    <button class="m-x" (click)="cancel.emit()" aria-label="Close">✕</button>
+  </div>
+
+  <!-- 1. describe (new / authored) -->
+  <section class="rf-sec" *ngIf="mode !== 'coded'">
+    <div class="wiz-l"><span class="rf-n">1</span> Describe what to catch</div>
+    <textarea class="wiz-ta" [(ngModel)]="english" placeholder="e.g. Flag when 4 or more accounts are created from the same device within 30 minutes"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" (click)="draftWithAi()" [disabled]="drafting || !english.trim()">{{ drafting ? '✨ Drafting…' : '✨ Draft with AI' }}</button>
+      <span class="muted" style="font-size:12px" *ngIf="draft">{{ draft.source === 'claude' ? 'Claude' : 'Built-in parser' }} · {{ draft.confidence * 100 | number:'1.0-0' }}% sure</span>
+    </div>
+    <div class="wiz-templates" *ngIf="mode === 'new' && !draft" style="margin-top:10px">
+      <div class="tpl-g-h">Or start from an example</div>
+      <button class="tpl" *ngFor="let ex of examples" (click)="draftWithAi(ex)">{{ ex }}</button>
+    </div>
+    <div class="q" *ngIf="draftError">{{ draftError }}</div>
+
+    <div *ngIf="draft" style="margin-top:10px">
+      <p class="wiz-expl">{{ draft.explanation }}</p>
+      <div class="maps" *ngIf="draft.fieldMappings?.length">
+        <div class="mapc" *ngFor="let m of draft.fieldMappings">
+          <span class="mapc-p">“{{ m.phrase }}”</span><span class="mapc-arr">→</span><span class="mapc-f mono">{{ m.table }}.{{ m.field }}</span>
+          <span class="mapc-i">{{ m.interpretation }}</span>
+        </div>
+      </div>
+      <div class="wiz-q" *ngIf="draft.clarifyingQuestions?.length">
+        <div class="wiz-l2">A few questions first</div>
+        <div class="qc" *ngFor="let q of draft.clarifyingQuestions">
+          <div class="qc-q">{{ q }}</div>
+          <input [(ngModel)]="answers[q]" placeholder="your answer" (keyup.enter)="draftWithAi()" />
+        </div>
+        <button class="btn ghost sm" (click)="draftWithAi()" [disabled]="drafting">Re-draft with answers</button>
+      </div>
+      <div class="ev" *ngIf="draft.assumptions?.length"><b>Assumptions to confirm:</b>
+        <ul style="margin:4px 0 0;padding-left:18px"><li *ngFor="let a of draft.assumptions">{{ a }}</li></ul></div>
+    </div>
+  </section>
+
+  <!-- 2. detection logic (new / authored) -->
+  <section class="rf-sec" *ngIf="mode !== 'coded'">
+    <div class="wiz-l"><span class="rf-n">2</span> Detection logic <span class="muted rf-hint">review or edit what the AI built</span></div>
+    <div class="rf-sentence">{{ sentence() }}</div>
+
+    <div class="prop-row">
+      <label>Table</label>
+      <select [(ngModel)]="target" (ngModelChange)="onTarget()"><option *ngFor="let t of targets" [value]="t.table">{{ t.table }}</option></select>
+    </div>
+    <div class="muted rf-hint" *ngIf="targetInfo" style="margin:-2px 0 8px 82px">{{ targetInfo.description }}</div>
+
+    <div class="wiz-l2">Only rows where ALL of these are true</div>
+    <div class="rf-cond" *ngFor="let c of when; let i = index; trackBy: trackIdx">
+      <select [(ngModel)]="c.field"><option value="">— column —</option><option *ngFor="let f of fields" [value]="f.field">{{ f.field }} ({{ f.type }})</option></select>
+      <select [(ngModel)]="c.op" class="rf-op"><option *ngFor="let o of ops" [value]="o">{{ opsLabel[o] }}</option></select>
+      <input *ngIf="!isList(c) && !noValue(c)" [(ngModel)]="c.value" placeholder="value" />
+      <input *ngIf="isList(c)" [(ngModel)]="c.valuesText" placeholder="comma-separated ('' = empty)" />
+      <span *ngIf="noValue(c)" class="muted">—</span>
+      <button class="rf-x" (click)="when.splice(i, 1)" title="Remove">✕</button>
+      <div class="rf-note" *ngIf="field(c.field)?.note">{{ field(c.field).note }}</div>
+    </div>
+    <button class="btn ghost xs" (click)="when.push(blank())">＋ Condition</button>
+
+    <div class="wiz-l2">Ignore rows where ANY of these are true <span class="muted rf-hint">(known-good / allow-list)</span></div>
+    <div class="rf-cond" *ngFor="let c of exclusions; let i = index; trackBy: trackIdx">
+      <select [(ngModel)]="c.field"><option value="">— column —</option><option *ngFor="let f of fields" [value]="f.field">{{ f.field }}</option></select>
+      <select [(ngModel)]="c.op" class="rf-op"><option *ngFor="let o of ops" [value]="o">{{ opsLabel[o] }}</option></select>
+      <input *ngIf="!isList(c) && !noValue(c)" [(ngModel)]="c.value" placeholder="value" />
+      <input *ngIf="isList(c)" [(ngModel)]="c.valuesText" placeholder="comma-separated" />
+      <span *ngIf="noValue(c)" class="muted">—</span>
+      <button class="rf-x" (click)="exclusions.splice(i, 1)" title="Remove">✕</button>
+    </div>
+    <button class="btn ghost xs" (click)="exclusions.push(blank())">＋ Exclusion</button>
+
+    <div class="wiz-l2">When to raise a case</div>
+    <div class="seg rf-seg">
+      <button [class.on]="!grouped" (click)="grouped = false">Every matching row</button>
+      <button [class.on]="grouped" (click)="grouped = true">When matches pile up on one identifier</button>
+    </div>
+    <div class="rf-grid" *ngIf="grouped">
+      <label class="rf-field">Group by
+        <select [(ngModel)]="groupBy"><option value="">—</option><option *ngFor="let f of fields" [value]="f.field">{{ f.field }}</option></select></label>
+      <label class="rf-field">Within (minutes)
+        <input type="number" min="1" [(ngModel)]="windowMinutes" placeholder="blank = any time" /></label>
+      <label class="rf-field">Measure
+        <select [(ngModel)]="aggregate"><option value="count">count of rows</option><option value="distinct">distinct values of…</option><option value="sum">sum of…</option></select></label>
+      <label class="rf-field" *ngIf="aggregate !== 'count'">Column
+        <select [(ngModel)]="aggregateField"><option value="">—</option><option *ngFor="let f of (aggregate === 'sum' ? numericFields() : fields)" [value]="f.field">{{ f.field }}</option></select></label>
+      <label class="rf-field">Alert at or above
+        <input type="number" min="1" [(ngModel)]="thresholdValue" /></label>
+    </div>
+
+    <div class="wiz-l2">How to value the impact</div>
+    <div class="row">
+      <div class="seg rf-seg">
+        <button [class.on]="impactMode === 'none'" (click)="impactMode = 'none'">Risk only</button>
+        <button [class.on]="impactMode === 'field'" (click)="impactMode = 'field'">Sum a money column</button>
+        <button [class.on]="impactMode === 'flat'" (click)="impactMode = 'flat'">Flat $ per match</button>
+      </div>
+      <select *ngIf="impactMode === 'field'" [(ngModel)]="impactField" style="width:200px"><option value="">— column —</option><option *ngFor="let f of numericFields()" [value]="f.field">{{ f.field }}</option></select>
+      <input *ngIf="impactMode === 'flat'" type="number" [(ngModel)]="impactPerMatch" placeholder="$ per match" style="width:130px" />
+    </div>
+  </section>
+
+  <!-- 1. parameters (built-in) -->
+  <section class="rf-sec" *ngIf="mode === 'coded'">
+    <div class="wiz-l"><span class="rf-n">1</span> Thresholds &amp; parameters <span class="muted rf-hint">out-of-range values are refused</span></div>
+    <div class="rf-param" *ngFor="let p of params">
+      <div style="flex:1;min-width:0"><b>{{ p.label }}</b><div class="muted rf-hint">{{ p.help }}</div></div>
+      <div class="rf-pin">
+        <input *ngIf="p.type !== 'list'" type="number" [min]="p.min" [max]="p.max" [step]="p.type === 'int' ? 1 : 0.01" [(ngModel)]="paramValues[p.key]" (ngModelChange)="test = null" />
+        <input *ngIf="p.type === 'list'" [(ngModel)]="paramValues[p.key]" (ngModelChange)="test = null" placeholder="comma-separated" />
+        <span class="muted rf-hint">{{ p.unit }}<ng-container *ngIf="p.min != null"> · {{ p.min }}–{{ p.max }}</ng-container></span>
+      </div>
+    </div>
+    <div class="muted" style="font-size:13px" *ngIf="!params.length">No tunable parameters — you can still change severity and the playbook.</div>
+  </section>
+
+  <!-- details -->
+  <section class="rf-sec">
+    <div class="wiz-l"><span class="rf-n">{{ mode === 'coded' ? 2 : 3 }}</span> Details &amp; response</div>
+    <div class="prop-row"><label>Name</label><input [(ngModel)]="name" placeholder="Short and specific" /></div>
+    <div class="prop-row"><label>Category</label>
+      <select [(ngModel)]="newCategory" [disabled]="mode === 'coded'"><option *ngFor="let c of categories" [value]="c">{{ c }}</option></select></div>
+    <div class="prop-row"><label>Severity</label>
+      <div class="seg rf-seg"><button *ngFor="let s of severities" [class.on]="severity === s" (click)="severity = s">{{ s }}</button></div></div>
+    <label class="rf-field" style="margin-top:8px">Expected behaviour <span class="muted rf-hint">— what normal looks like; shown on every case as “Expected (policy)”</span>
+      <textarea [(ngModel)]="description" rows="2" placeholder="e.g. A real student creates one account on their own device."></textarea></label>
+    <label class="rf-field" style="margin-top:8px">Business reason <span class="muted rf-hint">— what loss does this prevent?</span>
+      <textarea [(ngModel)]="rationale" rows="2" placeholder="e.g. Device farms harvest 7-day trials and resell QBank access."></textarea></label>
+    <div class="wiz-l2">Response playbook <span class="muted rf-hint">(added to every case this rule raises)</span></div>
+    <div class="rf-step" *ngFor="let s of playbook; let i = index; trackBy: trackIdx">
+      <span class="rf-n sm">{{ i + 1 }}</span>
+      <input [(ngModel)]="playbook[i]" placeholder="A concrete step, e.g. Hold the linked accounts and revoke trials" />
+      <button class="rf-x" (click)="removeStep(i)" title="Remove">✕</button>
+    </div>
+    <button class="btn ghost xs" (click)="addStep()">＋ Step</button>
+  </section>
+
+  <!-- dry run -->
+  <section class="rf-sec">
+    <div class="wiz-l"><span class="rf-n">{{ mode === 'coded' ? 3 : 4 }}</span> Dry-run against live data <span class="muted rf-hint">nothing is saved</span></div>
+    <button class="btn ghost" (click)="runTest()" [disabled]="testing">{{ testing ? 'Running…' : '▶ Run dry-run' }}</button>
+    <div class="q" *ngIf="testError.length"><div *ngFor="let e of testError">• {{ e }}</div></div>
+    <div *ngIf="test" style="margin-top:12px">
+      <div class="rf-stats">
+        <div><b>{{ test.matches }}</b><span>case(s) would be raised</span></div>
+        <div *ngIf="test.currentMatches != null"><b>{{ test.currentMatches }}</b><span>with the live settings</span></div>
+        <div><b>${{ test.totalImpactUsd | number:'1.0-0' }}</b><span>total impact</span></div>
+        <div><b>{{ test.evaluatedMs }} ms</b><span>over {{ test.rows | number }} rows</span></div>
+      </div>
+      <div class="q" *ngIf="test.noise">{{ test.noise }}</div>
+      <div class="ev" *ngIf="test.matches === 0">No current data matches. That can be right for a preventive rule — check it isn't too strict.</div>
+      <table *ngIf="test.sample?.length" style="margin-top:8px">
+        <thead><tr><th>Severity</th><th>Would raise</th><th class="num">Impact</th></tr></thead>
+        <tbody><tr *ngFor="let s of test.sample">
+          <td><span class="sev {{ s.severity | lowercase }}">{{ s.severity }}</span></td>
+          <td><div>{{ s.title }}</div><div class="muted" style="font-size:12px">{{ s.actual }}</div></td>
+          <td class="num">${{ s.businessImpactUsd | number:'1.0-0' }}</td>
+        </tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- save -->
+  <section class="rf-sec rf-save">
+    <div class="rf-checks">
+      <span class="rf-chk" *ngFor="let c of checks" [class.ok]="c.ok">{{ c.ok ? '✓' : '○' }} {{ c.label }}</span>
+    </div>
+    <label class="rf-field">Change note
+      <input [(ngModel)]="changeNote" placeholder="What changed and why — kept in the rule's version history" /></label>
+    <div class="q" *ngIf="saveErrors.length"><div *ngFor="let e of saveErrors">• {{ e }}</div></div>
+    <div class="wiz-cta">
+      <button class="btn ghost" (click)="cancel.emit()">Cancel</button>
+      <button class="btn big ok" (click)="save()" [disabled]="!ready || saving">{{ saving ? 'Saving…' : (mode === 'new' ? '✓ Save & activate rule' : '✓ Save changes') }}</button>
+      <span class="muted" style="font-size:12px" *ngIf="!ready">complete the checklist above</span>
+    </div>
+  </section>
+</div>

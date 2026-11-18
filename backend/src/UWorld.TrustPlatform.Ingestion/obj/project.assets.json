@@ -1504,23 +1504,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\kmarriboyina\\.nuget\\packages\\": {},
+    "C:\\Users\\vgajjala\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Ingestion\\UWorld.TrustPlatform.Ingestion.csproj",
+      "projectUniqueName": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Ingestion\\UWorld.TrustPlatform.Ingestion.csproj",
       "projectName": "UWorld.TrustPlatform.Ingestion",
-      "projectPath": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Ingestion\\UWorld.TrustPlatform.Ingestion.csproj",
-      "packagesPath": "C:\\Users\\kmarriboyina\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Ingestion\\obj\\",
+      "projectPath": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Ingestion\\UWorld.TrustPlatform.Ingestion.csproj",
+      "packagesPath": "C:\\Users\\vgajjala\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Ingestion\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\kmarriboyina\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\vgajjala\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -1536,14 +1536,14 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Data\\UWorld.TrustPlatform.Data.csproj": {
-              "projectPath": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Data\\UWorld.TrustPlatform.Data.csproj"
+            "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Data\\UWorld.TrustPlatform.Data.csproj": {
+              "projectPath": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Data\\UWorld.TrustPlatform.Data.csproj"
             },
-            "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Detection\\UWorld.TrustPlatform.Detection.csproj": {
-              "projectPath": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Detection\\UWorld.TrustPlatform.Detection.csproj"
+            "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Detection\\UWorld.TrustPlatform.Detection.csproj": {
+              "projectPath": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Detection\\UWorld.TrustPlatform.Detection.csproj"
             },
-            "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj": {
-              "projectPath": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj"
+            "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj": {
+              "projectPath": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj"
             }
           }
         }
@@ -1593,7 +1593,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.313/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

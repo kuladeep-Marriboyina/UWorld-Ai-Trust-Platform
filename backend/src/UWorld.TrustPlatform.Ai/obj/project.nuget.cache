@@ -1,8 +1,19 @@
 {
   "version": 2,
-  "dgSpecHash": "03ej4Dm4P5s=",
+  "dgSpecHash": "QcVSFJkLoRA=",
   "success": true,
-  "projectFilePath": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Ai\\UWorld.TrustPlatform.Ai.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Ai\\UWorld.TrustPlatform.Ai.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\vgajjala\\.nuget\\packages\\anthropic\\13.9.0\\anthropic.13.9.0.nupkg.sha512",
+    "C:\\Users\\vgajjala\\.nuget\\packages\\microsoft.extensions.ai.abstractions\\10.5.1\\microsoft.extensions.ai.abstractions.10.5.1.nupkg.sha512",
+    "C:\\Users\\vgajjala\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\8.0.0\\microsoft.extensions.configuration.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\vgajjala\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.2\\microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg.sha512",
+    "C:\\Users\\vgajjala\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.2\\microsoft.extensions.logging.abstractions.8.0.2.nupkg.sha512",
+    "C:\\Users\\vgajjala\\.nuget\\packages\\microsoft.extensions.primitives\\8.0.0\\microsoft.extensions.primitives.8.0.0.nupkg.sha512",
+    "C:\\Users\\vgajjala\\.nuget\\packages\\system.io.pipelines\\10.0.6\\system.io.pipelines.10.0.6.nupkg.sha512",
+    "C:\\Users\\vgajjala\\.nuget\\packages\\system.net.serversentevents\\10.0.1\\system.net.serversentevents.10.0.1.nupkg.sha512",
+    "C:\\Users\\vgajjala\\.nuget\\packages\\system.text.encodings.web\\10.0.6\\system.text.encodings.web.10.0.6.nupkg.sha512",
+    "C:\\Users\\vgajjala\\.nuget\\packages\\system.text.json\\10.0.6\\system.text.json.10.0.6.nupkg.sha512"
+  ],
   "logs": []
 }

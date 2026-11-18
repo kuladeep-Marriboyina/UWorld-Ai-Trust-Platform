@@ -7,10 +7,10 @@
 </div>
 <div class="muted" style="font-size:12.5px;margin-bottom:14px">
   Live · auto-refresh every 5s · last refreshed <b>{{ updated | date:'MMM d, HH:mm:ss' }}</b>
-  · window: last {{ windowMinutes }} min
+  · KPIs every 15s
 </div>
 
-<div class="tiles">
+<div class="tiles six">
   <div class="tile"><div class="v">{{ patterns.totalCases || 0 }}</div><div class="l">Open risk cases</div></div>
   <div class="tile"><div class="v">${{ (patterns.totalAtRiskUsd || 0) | number:'1.0-0' }}</div>
     <div class="l">Revenue at risk
@@ -26,14 +26,32 @@
       </span>
     </div>
   </div>
-  <div class="tile"><div class="v">{{ subs.length }}</div><div class="l">Subscriptions active now</div></div>
-  <div class="tile"><div class="v">${{ (usage?.totalAiCostUsd || 0) | number:'1.4-4' }}</div><div class="l">AI spend (total)</div></div>
+  <div class="tile" title="Confirmed fraud caught and actioned in the last 30 days">
+    <div class="v ok">{{ overview ? '$' + (overview.kpis.protectedUsd30d | number:'1.0-0') : '—' }}</div>
+    <div class="l">Protected · 30 days</div>
+  </div>
+  <div class="tile" title="Median time from a case being raised to an analyst acknowledging it">
+    <div class="v">{{ overview?.kpis.medianAckMinutes != null ? (overview.kpis.medianAckMinutes * 60000 | dur) : '—' }}</div>
+    <div class="l">Time to first look <span class="muted">(median)</span></div>
+  </div>
+  <div class="tile" [title]="'Share of analyst verdicts in the last 30 days that were real fraud' + (overview ? ' (' + overview.kpis.decided30d + ' verdicts)' : '')">
+    <div class="v">{{ pct(overview?.kpis.precision30d) }}</div>
+    <div class="l">Precision · 30 days</div>
+  </div>
 </div>
 
 <div class="grid2" style="margin-top:16px">
   <div class="card">
-    <h2>Top active subscriptions <span class="muted" style="font-size:12px">(last {{ windowMinutes }} min)</span></h2>
-    <table>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">Top active subscriptions <span class="muted" style="font-size:12px">({{ subs.length }} in the last {{ windowLabel }})</span></h2>
+      <div class="wtoggle" role="tablist" aria-label="Time window">
+        <span class="wt-thumb" aria-hidden="true" [style.transform]="'translateX(' + windowIndex * 100 + '%)'"></span>
+        <button *ngFor="let w of windows" role="tab" [attr.aria-selected]="w.minutes === windowMinutes"
+                [class.on]="w.minutes === windowMinutes" (click)="setWindow(w.minutes)">{{ w.label }}</button>
+      </div>
+    </div>
+    <div class="scroll-box" [class.loading]="subsLoading">
+    <table class="sticky-head">
       <thead><tr><th>Sub</th><th>User</th><th class="num">Accesses</th><th class="num">Regions</th><th>Last region</th><th>Last access</th></tr></thead>
       <tbody>
         <tr *ngFor="let s of subs">
@@ -44,13 +62,15 @@
           <td>{{ s.lastCountry }}</td>
           <td class="mono" style="font-size:12px" [title]="s.lastAccessUtc | date:'medium'">{{ s.lastAccessUtc | date:'MMM d, HH:mm:ss' }}</td>
         </tr>
-        <tr *ngIf="!subs.length"><td colspan="6" class="muted">No active sessions in the window.</td></tr>
+        <tr *ngIf="!subs.length"><td colspan="6" class="muted">{{ subsLoading ? 'Loading…' : 'No active sessions in the last ' + windowLabel + '.' }}</td></tr>
       </tbody>
     </table>
+    </div>
   </div>
 
   <div class="card">
-    <h2>Alerts</h2>
+    <h2>Alerts <span class="muted" style="font-size:12px;font-weight:400" *ngIf="alerts.alerts?.length">({{ alerts.alerts.length }})</span></h2>
+    <div class="alerts-scroll">
     <div *ngFor="let a of alerts.alerts" class="alert">
       <span class="sev {{ a.severity | lowercase }}">{{ a.severity }}</span>
       <div class="t"><a [routerLink]="['/cases', a.caseId]">{{ a.title }}</a>
@@ -62,6 +82,7 @@
     <div *ngFor="let c of alerts.compromise" class="alert">
       <span class="chip">{{ c.entity }}</span>
       <div class="t">{{ c.cases }} fraud cases · ${{ c.atRiskUsd | number:'1.0-0' }} at risk</div>
+    </div>
     </div>
   </div>
 </div>
@@ -78,4 +99,53 @@
       </tr>
     </tbody>
   </table>
+</div>
+
+<div class="grid2" style="margin-top:16px">
+  <div class="card">
+    <h2>Repeat identifiers <span class="muted" style="font-size:12px">(IPs, devices, cards and domains behind open cases)</span></h2>
+    <table>
+      <thead><tr><th>Identifier</th><th class="num">Cases</th><th class="num">Accounts</th><th class="num">At risk</th><th>Last seen</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let h of overview?.hotspots">
+          <td>
+            <span class="muted" style="font-size:11px;text-transform:uppercase;margin-right:6px">{{ h.type }}</span><span class="mono" style="font-size:12.5px">{{ h.value }}</span>
+            <span class="sev {{ h.topSeverity | lowercase }}" style="margin-left:6px">{{ h.topSeverity }}</span>
+          </td>
+          <td class="num">{{ h.cases }}</td>
+          <td class="num">{{ h.accounts || '—' }}</td>
+          <td class="num">${{ h.atRiskUsd | number:'1.0-0' }}</td>
+          <td class="mono" style="font-size:12px" [title]="h.lastSeenUtc | date:'medium'">{{ h.lastSeenUtc | ago }}</td>
+        </tr>
+        <tr *ngIf="!overview?.hotspots?.length"><td colspan="5" class="muted">No shared identifiers across open cases.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2 class="row" style="justify-content:space-between">Is each rule earning its keep? <a routerLink="/rules" style="font-size:12.5px;font-weight:400">Rules Portal →</a></h2>
+    <table>
+      <thead><tr><th>Rule</th><th class="num">Open</th><th class="num">24h</th><th style="width:36%">Precision</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let r of overview?.rules">
+          <td>{{ r.name }} <span class="chip" *ngIf="!r.live">off</span></td>
+          <td class="num">{{ r.open }}</td>
+          <td class="num">{{ r.last24h }}</td>
+          <td>
+            <div class="row" style="flex-wrap:nowrap" *ngIf="r.precision != null; else noVerdicts">
+              <div class="bar" style="flex:1"><i [style.width.%]="r.precision * 100" [style.background]="precisionColor(r.precision)"></i></div>
+              <span class="mono" style="font-size:12px">{{ pct(r.precision) }}</span>
+            </div>
+            <ng-template #noVerdicts><span class="muted" style="font-size:12px">no verdicts yet</span></ng-template>
+          </td>
+        </tr>
+        <tr *ngIf="!overview?.rules?.length"><td colspan="4" class="muted">No rule activity yet.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2>Cases per day <span class="muted" style="font-size:12px">(last 14 days · by analyst verdict)</span></h2>
+  <div class="v2"><app-trend-chart [data]="overview?.trend || []"></app-trend-chart></div>
 </div>

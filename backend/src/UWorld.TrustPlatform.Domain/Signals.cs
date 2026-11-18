@@ -72,4 +72,12 @@ public sealed class SignalSet
     public IReadOnlyList<BlockedIp> BlockedIps { get; init; } = Array.Empty<BlockedIp>();
     public IReadOnlyList<Country> Countries { get; init; } = Array.Empty<Country>();
     public IReadOnlyList<GaDiscount> GaDiscounts { get; init; } = Array.Empty<GaDiscount>();
+
+    // Identity & API telemetry
+    public IReadOnlyList<UserRecord> Users { get; init; } = Array.Empty<UserRecord>();
+    public IReadOnlyList<ApiLogRecord> ApiLogs { get; init; } = Array.Empty<ApiLogRecord>();
+    public IReadOnlyList<PackageRecord> Packages { get; init; } = Array.Empty<PackageRecord>();
+
+    public decimal PriceOf(int packageId) => Packages.FirstOrDefault(p => p.PackageId == packageId)?.ListPrice ?? 199m;
+    public string PackageName(int packageId) => Packages.FirstOrDefault(p => p.PackageId == packageId)?.Name ?? $"package {packageId}";
 }

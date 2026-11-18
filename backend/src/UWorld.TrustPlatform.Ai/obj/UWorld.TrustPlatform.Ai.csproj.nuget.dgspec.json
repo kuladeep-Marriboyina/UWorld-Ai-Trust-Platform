@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Ai\\UWorld.TrustPlatform.Ai.csproj": {}
+    "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Ai\\UWorld.TrustPlatform.Ai.csproj": {}
   },
   "projects": {
-    "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Ai\\UWorld.TrustPlatform.Ai.csproj": {
+    "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Ai\\UWorld.TrustPlatform.Ai.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Ai\\UWorld.TrustPlatform.Ai.csproj",
+        "projectUniqueName": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Ai\\UWorld.TrustPlatform.Ai.csproj",
         "projectName": "UWorld.TrustPlatform.Ai",
-        "projectPath": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Ai\\UWorld.TrustPlatform.Ai.csproj",
-        "packagesPath": "C:\\Users\\kmarriboyina\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Ai\\obj\\",
+        "projectPath": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Ai\\UWorld.TrustPlatform.Ai.csproj",
+        "packagesPath": "C:\\Users\\vgajjala\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Ai\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\kmarriboyina\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\vgajjala\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -33,8 +33,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj": {
-                "projectPath": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj"
+              "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj": {
+                "projectPath": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj"
               }
             }
           }
@@ -54,6 +54,20 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
+          "dependencies": {
+            "Anthropic": {
+              "target": "Package",
+              "version": "[13.9.0, )"
+            },
+            "Microsoft.Extensions.Configuration.Abstractions": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Microsoft.Extensions.Logging.Abstractions": {
+              "target": "Package",
+              "version": "[8.0.2, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -70,24 +84,24 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.313/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj": {
+    "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj",
+        "projectUniqueName": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj",
         "projectName": "UWorld.TrustPlatform.Domain",
-        "projectPath": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj",
-        "packagesPath": "C:\\Users\\kmarriboyina\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\kmarriboyina\\source\\repos\\uworld-ai-trust-platform\\backend\\src\\UWorld.TrustPlatform.Domain\\obj\\",
+        "projectPath": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Domain\\UWorld.TrustPlatform.Domain.csproj",
+        "packagesPath": "C:\\Users\\vgajjala\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\vgajjala\\Documents\\UWorld-Ai-Trust-Platform\\backend\\src\\UWorld.TrustPlatform.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\kmarriboyina\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\vgajjala\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -136,7 +150,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.313/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

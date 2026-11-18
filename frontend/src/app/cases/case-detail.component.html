@@ -5,8 +5,9 @@
   <div class="card cd-head sevbar-{{ case.severity | lowercase }}">
     <div class="cd-top">
       <span class="sev {{ case.severity | lowercase }}">{{ case.severity }}</span>
-      <span class="chip">{{ case.ruleId }} · {{ case.ruleVersion }}</span>
       <span class="pill {{ case.status | lowercase }}">{{ case.status }}</span>
+      <span class="chip">{{ case.ruleId }} · {{ case.ruleVersion }}</span>
+      <span class="chip" *ngIf="case.category">{{ case.category }}</span>
       <span class="muted cd-id">Case #{{ case.caseId }}</span>
     </div>
     <h1 class="cd-title">{{ case.title }}</h1>
@@ -46,6 +47,11 @@
       <div><b>Raised</b><span class="mono">{{ case.createdUtc | date:'MMM d, y · HH:mm:ss' }}</span></div>
       <div><b>Resolved</b><span class="mono">{{ case.resolvedUtc ? (case.resolvedUtc | date:'MMM d, y · HH:mm:ss') : '—' }}</span></div>
     </div>
+
+    <div class="cd-actions">
+      <span class="cd-spacer"></span>
+      <button class="btn ghost sm" (click)="openReport()">⎙ Generate report</button>
+    </div>
   </div>
 
   <div class="cd-grid">
@@ -72,8 +78,11 @@
         </div>
       </div>
 
-      <div class="card">
-        <h2>Evidence timeline <span class="muted cnt">{{ case.evidence.length }} items</span></h2>
+      <details class="card collapsible">
+        <summary>
+          <h2>Evidence timeline <span class="muted cnt">{{ case.evidence.length }} items</span></h2>
+          <span class="muted coll-hint">Show</span>
+        </summary>
         <div class="tl">
           <div class="tl-i" *ngFor="let e of timeline">
             <div class="tl-dot"></div>
@@ -87,7 +96,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </details>
 
       <div class="card">
         <h2>Audit trail</h2>
@@ -171,6 +180,41 @@
           <p class="muted" style="font-size:12px">{{ ai.disclaimer }}</p>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- generate report -->
+<div class="modal-back" *ngIf="reportOpen" (click)="closeReport()">
+  <div class="modal rp-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Case report">
+    <div class="m-head">
+      <div>
+        <div class="m-title">Case #{{ id }} report</div>
+        <div class="m-sub">Built only from recorded facts — no AI text. Use the full report for tickets, email or an incident doc; the summary for chat.</div>
+      </div>
+      <button class="m-x" (click)="closeReport()" aria-label="Close">✕</button>
+    </div>
+
+    <div class="rpt-bar">
+      <div class="wtoggle rpt-tabs" role="tablist">
+        <span class="wt-thumb" aria-hidden="true" [style.transform]="reportTab === 'md' ? 'translateX(0)' : 'translateX(100%)'"></span>
+        <button role="tab" [class.on]="reportTab === 'md'" (click)="reportTab = 'md'">Full report</button>
+        <button role="tab" [class.on]="reportTab === 'chat'" (click)="reportTab = 'chat'">Chat summary</button>
+      </div>
+      <label class="rpt-check"><input type="checkbox" [(ngModel)]="redact" (change)="loadReport()" /> Mask customer identifiers</label>
+    </div>
+
+    <div class="rpt-body">
+      <div class="q" *ngIf="reportError">{{ reportError }}</div>
+      <div class="muted rpt-loading" *ngIf="!report && !reportError">Building report…</div>
+      <pre class="rpt-text" *ngIf="report">{{ reportText }}</pre>
+    </div>
+
+    <div class="rpt-foot">
+      <span class="rpt-ok" *ngIf="reportCopied">✓ {{ reportCopied }}</span>
+      <span class="cd-spacer"></span>
+      <button class="btn ghost sm" (click)="downloadReport()" [disabled]="!report">Download .md</button>
+      <button class="btn sm" (click)="copyReport()" [disabled]="!report">Copy</button>
     </div>
   </div>
 </div>

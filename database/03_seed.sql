@@ -5,6 +5,7 @@ USE UWorldTrust;
 GO
 SET NOCOUNT ON;
 
+IF OBJECT_ID('dbo.CaseEntities') IS NOT NULL DELETE dbo.CaseEntities;
 DELETE dbo.CaseActivity;  DELETE dbo.CaseEvidence;  DELETE dbo.RiskCases;
 DELETE dbo.Deployments;   DELETE dbo.Cves;          DELETE dbo.AssetInventory;
 DELETE dbo.AccessEvents;  DELETE dbo.AuthOutcomes;   DELETE dbo.Entitlements;

@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -9,11 +9,23 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { CasesComponent } from './cases/cases.component';
 import { CaseDetailComponent } from './cases/case-detail.component';
 import { RulesComponent } from './rules/rules.component';
+import { RuleFormComponent } from './rules/rule-form.component';
+import { UserHeaderInterceptor } from './core/session.service';
+import { AgoPipe, DurationPipe, UsdPipe, UtcDatePipe } from './core/format';
+import { GaugeComponent, LinkGraphComponent, TrafficChartComponent, TrendChartComponent } from './shared/charts';
+import { InfoComponent } from './shared/info.component';
+import { LabComponent } from './lab/lab.component';
+import { StorefrontComponent } from './lab/storefront.component';
 
 @NgModule({
-  declarations: [AppComponent, DashboardComponent, CasesComponent, CaseDetailComponent, RulesComponent],
+  declarations: [
+    AppComponent, DashboardComponent, CasesComponent, CaseDetailComponent, RulesComponent, RuleFormComponent,
+    AgoPipe, UsdPipe, DurationPipe, UtcDatePipe,
+    TrafficChartComponent, TrendChartComponent, GaugeComponent, LinkGraphComponent, InfoComponent,
+    LabComponent, StorefrontComponent,
+  ],
   imports: [BrowserModule, HttpClientModule, FormsModule, AppRoutingModule],
-  providers: [],
+  providers: [{ provide: HTTP_INTERCEPTORS, useClass: UserHeaderInterceptor, multi: true }],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

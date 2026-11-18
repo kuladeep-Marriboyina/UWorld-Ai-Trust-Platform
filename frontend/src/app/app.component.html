@@ -1,84 +1,33 @@
+<ng-container *ngIf="!bare; else bareTpl">
 <div class="topbar">
   <div class="brand">UWorld <span>AI Trust &amp; Revenue Protection</span></div>
   <nav>
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Dashboard</a>
     <a routerLink="/cases" routerLinkActive="active">Cases</a>
     <a routerLink="/rules" routerLinkActive="active">Rules Portal</a>
+    <a href="/store" (click)="openStore($event)" title="Opens the simulated customer storefront in a new window">Customer Storefront ↗</a>
   </nav>
   <div class="sim">
     <div class="dropdown">
-      <button class="btn-sim" [class.open]="menuOpen" (click)="menuOpen = !menuOpen">
+      <button class="btn-sim" [class.open]="menuOpen" [class.here]="onLab" (click)="menuOpen = !menuOpen" aria-haspopup="menu" [attr.aria-expanded]="menuOpen">
         <span class="si">⚗</span>
-        <span class="lbl">Simulate</span>
+        <span class="lbl">Simulation Lab</span>
         <span class="caret">▾</span>
       </button>
-      <div class="menu wide" *ngIf="menuOpen">
-        <div class="menuhdr">Pick an attack family</div>
-        <div class="menuerr" *ngIf="!groups.length">{{ error || 'Loading scenarios…' }}</div>
-        <button *ngFor="let g of groups" (click)="open(g)" class="menuitem">
-          <span class="mi-ic">{{ g.icon }}</span>
-          <span class="mi-txt"><span class="ml">{{ g.label }}</span><span class="mt">{{ g.variants.length }} bypass variants</span></span>
+      <div class="menu wide" *ngIf="menuOpen" role="menu">
+        <div class="menuhdr">Attacks · should raise a case</div>
+        <button *ngFor="let s of attacks" (click)="openScenario(s)" class="menuitem" role="menuitem">
+          <span class="mi-ic">{{ s.icon }}</span>
+          <span class="mi-txt"><span class="ml">{{ s.title }}</span><span class="mt">{{ s.summary }}</span></span>
           <span class="mi-go">›</span>
         </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- simulate popup -->
-<div class="modal-back" *ngIf="group" (click)="close()">
-  <div class="modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-    <div class="m-head">
-      <div>
-        <div class="m-title">{{ group.icon }} {{ group.label }}</div>
-        <div class="m-sub">{{ group.summary }} Detected by <span class="chip">{{ group.ruleId }}</span></div>
-      </div>
-      <button class="m-x" (click)="close()" [disabled]="busy" aria-label="Close">✕</button>
-    </div>
-
-    <div class="m-body">
-      <div class="m-list">
-        <div class="m-label">Bypass variants</div>
-        <button *ngFor="let v of group.variants; let i = index" class="vopt" [class.sel]="v === variant"
-                (click)="variant = v" [disabled]="busy">
-          <span class="vnum">{{ i + 1 }}</span>
-          <span><span class="vl">{{ v.label }}</span><span class="vt">{{ v.technique }}</span></span>
+        <div class="menuhdr">Legitimate · must stay quiet</div>
+        <button *ngFor="let s of legit" (click)="openScenario(s)" class="menuitem" role="menuitem">
+          <span class="mi-ic">{{ s.icon }}</span>
+          <span class="mi-txt"><span class="ml">{{ s.title }}</span><span class="mt">{{ s.summary }}</span></span>
+          <span class="mi-go">›</span>
         </button>
-      </div>
-
-      <div class="m-detail" *ngIf="variant">
-        <div class="m-label">What this simulation does</div>
-        <h3 class="vd-title">{{ variant.label }}</h3>
-        <div class="vd-tech">Technique: {{ variant.technique }}</div>
-        <p class="vd-desc">{{ variant.detail }}</p>
-        <div class="vd-grid">
-          <div><b>Writes to</b><span class="mono">{{ variant.tables }}</span></div>
-          <div><b>Then</b>Runs one detection pass over all rules</div>
-          <div><b>Expected result</b>{{ variant.expect }}</div>
-        </div>
-        <div class="row" style="margin-top:14px">
-          <button class="btn" (click)="run(variant)" [disabled]="busy">{{ busy ? 'Running…' : '▶ Run this simulation' }}</button>
-          <button class="btn ghost" (click)="runAll()" [disabled]="busy">Run all {{ group.variants.length }} variants</button>
-        </div>
-        <div class="q" *ngIf="error" style="margin-top:10px">{{ error }}</div>
-      </div>
-    </div>
-
-    <div class="m-results" *ngIf="runs.length">
-      <div class="m-label">Results</div>
-      <div class="res" *ngFor="let r of runs">
-        <div class="res-h">
-          <b>{{ r.variant.label }}</b>
-          <span class="res-n" [class.zero]="!r.result.casesCreated">{{ r.result.casesCreated }} new case(s)</span>
-        </div>
-        <details>
-          <summary>Rows injected ({{ r.result.injected.length }})</summary>
-          <div class="mono inj" *ngFor="let line of r.result.injected">{{ line }}</div>
-        </details>
-        <a *ngFor="let c of r.result.newCases" class="res-case" [routerLink]="['/cases', c.caseId]" (click)="close()">
-          <span class="sev {{ c.severity | lowercase }}">{{ c.severity }}</span>
-          #{{ c.caseId }} {{ c.title }} <span class="go">Open →</span>
-        </a>
+        <a class="menufoot" routerLink="/lab" (click)="menuOpen = false" role="menuitem">Open Simulation Lab →</a>
       </div>
     </div>
   </div>
@@ -87,3 +36,7 @@
 <main>
   <router-outlet></router-outlet>
 </main>
+</ng-container>
+
+<!-- the customer storefront renders full-page, without the analyst console chrome -->
+<ng-template #bareTpl><router-outlet></router-outlet></ng-template>

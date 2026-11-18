@@ -17,14 +17,23 @@ export class ApiService {
   aiSummary(id: number) { return this.http.post<any>(`${base}/api/cases/${id}/ai-summary`, {}, lead); }
   assign(id: number, assignedTo: string) { return this.http.post<any>(`${base}/api/cases/${id}/assign`, { assignedTo }, lead); }
   escalate(id: number, notes: string) { return this.http.post<any>(`${base}/api/cases/${id}/escalate`, { notes }, lead); }
+  /** Shareable case report built from recorded facts: { markdown, chat }. */
+  report(id: number, redact: boolean, link: string) {
+    return this.http.get<any>(`${base}/api/cases/${id}/report?redact=${redact}&link=${encodeURIComponent(link)}`, lead);
+  }
   resolve(id: number, notes: string) { return this.http.post<any>(`${base}/api/cases/${id}/resolve`, { notes }, lead); }
 
   rules(): Observable<any[]> { return this.http.get<any[]>(`${base}/api/rules`); }
   toggleRule(id: string, enabled: boolean) { return this.http.post<any>(`${base}/api/rules/${id}/toggle?enabled=${enabled}`, {}, lead); }
   catalog() { return this.http.get<any>(`${base}/api/rules/catalog`); }
   author(text: string, answers?: any) { return this.http.post<any>(`${base}/api/rules/author`, { text, answers }, lead); }
+  // add / edit (same validation as vishnu's editor; save puts the new version live and keeps history)
+  draftRule(text: string, answers?: any) { return this.http.post<any>(`${base}/api/rules/draft`, { text, answers }, lead); }
+  testRule(body: any) { return this.http.post<any>(`${base}/api/rules/test`, body, lead); }
+  saveRule(body: any) { return this.http.post<any>(`${base}/api/rules/save`, body, lead); }
   confirmRule(rule: any) { return this.http.post<any>(`${base}/api/rules/author/confirm`, rule, lead); }
 
+  overview(hours = 24) { return this.http.get<any>(`${base}/api/dashboard/overview?hours=${hours}`); }
   activeSubs(top = 50, minutes = 15): Observable<any[]> { return this.http.get<any[]>(`${base}/api/dashboard/active-subscriptions?top=${top}&minutes=${minutes}`); }
   patterns() { return this.http.get<any>(`${base}/api/dashboard/patterns`); }
   alerts() { return this.http.get<any>(`${base}/api/alerts`); }

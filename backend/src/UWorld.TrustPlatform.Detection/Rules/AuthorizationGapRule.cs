@@ -38,6 +38,7 @@ public sealed class AuthorizationGapRule : IDetectionRule
                 Confidence = 0.97m,
                 Score = 96m,
                 BusinessImpactUsd = EstimateContentValue(s, access.PackageId),
+                ImpactFormula = $"Protected content of {(access.PackageId is int pk ? s.PackageName(pk) : "an unknown package")} served without entitlement — valued at one subscription (${EstimateContentValue(s, access.PackageId):N2}); {access.ContentReturnedBytes:N0} bytes left the platform.",
                 ScoreBreakdown =
                 {
                     new ScoreFactor("AuthResult", 60m, $"Authorization was {auth.AuthResult}."),
@@ -50,7 +51,7 @@ public sealed class AuthorizationGapRule : IDetectionRule
                 Evidence =
                 {
                     Ev("AuthOutcome", auth.AuthId.ToString(), $"Authorization {auth.AuthResult} for {auth.Resource}", $"correlationId={auth.CorrelationId}", auth.OccurredUtc),
-                    Ev("AccessEvent", access.AccessId.ToString(), $"{access.ContentReturnedBytes:N0} bytes returned for {access.Resource}", $"session={access.SessionId}; correlationId={access.CorrelationId}", access.OccurredUtc),
+                    Ev("AccessEvent", access.AccessId.ToString(), $"{access.ContentReturnedBytes:N0} bytes returned for {access.Resource}", $"ip={access.IpAddress} · device={access.DeviceId} · session={access.SessionId} · correlationId={access.CorrelationId}", access.OccurredUtc),
                 }
             };
         }
@@ -59,6 +60,7 @@ public sealed class AuthorizationGapRule : IDetectionRule
     /// <summary>Value of the protected content exposed, approximated by the package's list price.</summary>
     private static decimal EstimateContentValue(SignalSet s, int? packageId)
     {
+        if (packageId is int pid && s.Packages.Any(p => p.PackageId == pid)) return s.PriceOf(pid);
         var prices = s.Orders.Where(o => packageId is null || o.PackageId == packageId).Select(o => o.ListPrice).ToList();
         return prices.Count > 0 ? Math.Round(prices.Average(), 2) : 199m;
     }

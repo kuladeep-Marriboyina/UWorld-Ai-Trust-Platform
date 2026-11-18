@@ -7,7 +7,21 @@ namespace UWorld.TrustPlatform.Domain;
 public sealed record PaymentRecord(
     int PaymentId, int UserId, decimal FinalAmount, decimal TransactionAmount, decimal DiscountAmount,
     string? TransactionId, byte PaymentStatus, byte? GatewayId, byte PaymentModeId, byte? SourceId,
-    byte? PaymentTypeId, string? IPAddress, string? CountryCode, DateTime DateCreated);
+    byte? PaymentTypeId, string? IPAddress, string? CountryCode, DateTime DateCreated,
+    string? CardFingerprint = null, string? CardLast4 = null);
+
+/// <summary>USERS — one row per account, with the network/device identity it was created from.</summary>
+public sealed record UserRecord(
+    int UserId, string Email, string FirstName, string LastName, string? CountryCode,
+    string RegistrationIp, string DeviceFingerprint, string? UserAgent, string SignupSource, DateTime DateCreated);
+
+/// <summary>API_LOGS — every customer-facing API call (register, login, subscribe, apply code…).</summary>
+public sealed record ApiLogRecord(
+    long Id, string RequestId, int? UserId, string? Email, string Method, string Endpoint, int StatusCode,
+    string Outcome, string IPAddress, string? CountryCode, string? UserAgent, string? DeviceFingerprint, DateTime DateCreated);
+
+/// <summary>PACKAGES — catalog with list price (drives factual $ impact).</summary>
+public sealed record PackageRecord(short PackageId, string Name, decimal ListPrice, int DurationDays, int TrialDays);
 
 public sealed record BraintreeTxn(
     string TransactionId, int? PaymentId, string TransactionStatus, decimal? Amount,

@@ -7,11 +7,19 @@ import { impactExplain, ImpactInfo } from '../impact';
   templateUrl: './cases.component.html'
 })
 export class CasesComponent implements OnInit {
-  cases: any[] = [];
-  rules: string[] = [];
+  all: any[] = [];
+  rules: { id: string; name: string }[] = [];
+  loading = false;
+  openImpact: number | null = null;
+
+  // filters (applied client-side, instantly)
+  search = '';
   filterRule = '';
   filterSeverity = '';
-  openImpact: number | null = null;
+  filterStatus = '';
+
+  readonly severities = ['Critical', 'High', 'Medium', 'Low'];
+  readonly statuses = ['New', 'Assigned', 'Escalated', 'Resolved'];
 
   constructor(private api: ApiService) {}
 
@@ -23,14 +31,35 @@ export class CasesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.api.rules().subscribe(r => this.rules = r.map(x => x.ruleId));
+    this.api.rules().subscribe(r => this.rules = r
+      .map(x => ({ id: x.ruleId, name: x.name || x.ruleId }))
+      .sort((a, b) => a.name.localeCompare(b.name)));
     this.load();
   }
 
   load(): void {
-    const q: string[] = [];
-    if (this.filterRule) { q.push('ruleId=' + this.filterRule); }
-    if (this.filterSeverity) { q.push('severity=' + this.filterSeverity); }
-    this.api.cases(q.length ? '?' + q.join('&') : '').subscribe(c => this.cases = c);
+    this.loading = true;
+    this.api.cases('').subscribe(c => { this.all = c; this.loading = false; }, () => this.loading = false);
   }
+
+  // ---- filtering ----
+  private matches(c: any): boolean {
+    if (this.filterRule && c.ruleId !== this.filterRule) { return false; }
+    if (this.filterSeverity && c.severity !== this.filterSeverity) { return false; }
+    if (this.filterStatus && c.status !== this.filterStatus) { return false; }
+    const q = this.search.trim().toLowerCase().replace(/^#/, '');
+    if (!q) { return true; }
+    return [c.caseId, c.title, c.ruleId, c.actual, c.entityRef, c.assignedTo, c.category]
+      .some(v => v != null && String(v).toLowerCase().includes(q));
+  }
+
+  get filtered(): any[] {
+    return this.all.filter(c => this.matches(c))
+      .sort((a, b) => Date.parse(b.createdUtc) - Date.parse(a.createdUtc));   // newest first
+  }
+
+  get hasFilters(): boolean { return !!(this.search || this.filterRule || this.filterSeverity || this.filterStatus); }
+  clear(): void { this.search = ''; this.filterRule = ''; this.filterSeverity = ''; this.filterStatus = ''; }
+
+  ruleName(id: string): string { return this.rules.find(r => r.id === id)?.name || id; }
 }

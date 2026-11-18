@@ -16,7 +16,7 @@ public sealed class DeclarativeRuleSource : IDeclarativeRuleSource
     {
         foreach (var entry in _config.All)
         {
-            if (!entry.IsDeclarative || !entry.Enabled || string.IsNullOrWhiteSpace(entry.DeclarativeJson)) continue;
+            if (!entry.IsDeclarative || !entry.IsLive || string.IsNullOrWhiteSpace(entry.DeclarativeJson)) continue;
             DeclarativeRule? rule = null;
             try { rule = JsonSerializer.Deserialize<DeclarativeRule>(entry.DeclarativeJson); } catch { }
             if (rule is not null) yield return new DeclarativeRuleEvaluator(rule);
